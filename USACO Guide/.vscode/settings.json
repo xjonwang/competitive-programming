@@ -1,0 +1,25 @@
+{
+    "files.associations": {
+        "iostream": "cpp",
+        "iosfwd": "cpp",
+        "valarray": "cpp",
+        "ostream": "cpp",
+        "span": "cpp",
+        "*.tcc": "cpp",
+        "bitset": "cpp",
+        "condition_variable": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "future": "cpp",
+        "string_view": "cpp",
+        "type_traits": "cpp",
+        "variant": "cpp",
+        "cmath": "cpp",
+        "random": "cpp",
+        "barrier": "cpp",
+        "chrono": "cpp",
+        "latch": "cpp",
+        "limits": "cpp",
+        "semaphore": "cpp"
+    }
+}
