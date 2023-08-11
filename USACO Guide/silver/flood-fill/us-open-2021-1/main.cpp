@@ -143,13 +143,16 @@ struct Tile {
 	int x, row, col;
 };
 
-ll n, ans, ri, ci;
+ll n, ri, ci;
 vt<vt<Tile>> grid;
-vt<vt<bool>> vis;
-vt<vt<int>> color, cur;
+vt<vt<vt<bool>>> vis;
+unordered_set<ll> ans;
+vt<ll> b(9, 0);
 vt<int> dr={1, -1, 0, 0}, dc={0, 0, 1, -1};
 
-bool checkMoo(vt<vt<int>>& color) {
+bool checkMoo(vt<ll>& b) {
+	vt<vt<int>> color(3, vt<int>(3));
+	FOR(3) FOR(j, 3) color[i][j]=b[3*i+j];
 	FOR(3) {
 		if ((color[i][0]==1 && color[i][1]==2 && color[i][2]==2)
 			|| (color[i][0]==2 && color[i][1]==2 && color[i][2]==1)
@@ -164,46 +167,33 @@ bool checkMoo(vt<vt<int>>& color) {
 }
 
 void flood(ll r, ll c) {
-	if (r<0 || r>=n || c<0 || c>=n || vis[r][c]) return;
+	ll s=0, e=1;
+	FOR(9) s+=b[i]*e, e*=3;
+	if (r<0 || r>=n || c<0 || c>=n || vis[r][c][s]) return;
+	vis[r][c][s]=1;
+	if (checkMoo(b)) {
+		ans.insert(s);
+		return;
+	}
+	ll p=-1, pidx=-1;
 	if (grid[r][c].x) {
 		if (grid[r][c].x<0) return;
-		else if (grid[r][c].x!=color[grid[r][c].row][grid[r][c].col]) return;
-		else cur[grid[r][c].row][grid[r][c].col]=grid[r][c].x;
+		else if (!b[grid[r][c].row*3 + grid[r][c].col]) {
+			ll idx=grid[r][c].row*3 + grid[r][c].col;
+			p=b[idx], pidx=idx;
+			b[idx]=grid[r][c].x;
+		}
 	}
-	vis[r][c]=1;
 	FOR(4) flood(r+dr[i], c+dc[i]);
+	if (p>=0) b[pidx]=p;
 }
 
-
-bool check() {
-	vis.assign(n, vt<bool>(n, 0));
-	cur.assign(3, vt<int>(3, 0));
-	flood(ri, ci);
-	bool b=1;
-	FOR(3) FOR(j, 3) if (color[i][j]!=cur[i][j]) b=0;
-	return b;
-}
-
-void solve(int x) {
-	if (x==9) {
-		if (checkMoo(color) && check()) {
-			ans++;
-			print(color);
-		}
-		return;
-	} else {
-		FOR(3) {
-			color[x/3][x%3]=i;
-			solve(x+1);
-		}
-	}
-}
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
 	read(n);
-	grid.resize(n, vt<Tile>(n)), color.resize(3, vt<int>(3));
+	grid.resize(n, vt<Tile>(n)), vis.resize(n, vt<vt<bool>>(n, vt<bool>(19683, 0)));
 	char c1, c2, c3;
 	FOR(n) {
 		FOR(j, n) {
@@ -217,7 +207,6 @@ int main() {
 			}
 		}
 	}
-	color={{2, 0, 1}, {0, 2, 0}, {1, 2, 1}};
-	solve(0);
-	print(ans);
+	flood(ri, ci);
+	print(sz(ans));
 }

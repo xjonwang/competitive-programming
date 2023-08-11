@@ -21,5 +21,6 @@
         "latch": "cpp",
         "limits": "cpp",
         "semaphore": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

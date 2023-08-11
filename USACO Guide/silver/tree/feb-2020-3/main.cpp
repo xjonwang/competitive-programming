@@ -139,25 +139,15 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll n; bool b;
+ll n, c1, c2, s1, s2;
 vt<vt<ll>> adj;
-vt<ll> clocks, temp, change;
+vt<ll> clocks, color;
 
-void dfs(ll v, ll p, ll h) {
-	if (h>=2) b=1;
-	if (p!=-1 && sz(adj[v])==1) {
-		change[v]=(12-temp[v])%12;
-		temp[v]=0;
-		return;
-	}
-	ll d=0;
-	EACH(u, adj[v]) {
-		if (u==p) continue;
-		dfs(u, v, h+1);
-		d+=change[u];
-	}
-	change[v]=d ? (12-(temp[v]+d+1)%12)%12 : 0;
-	temp[v]=0;
+void dfs(ll v, ll p, ll c) {
+	color[v]=c;
+	if (c==1) c1=(c1+clocks[v])%12, s1++;
+	else c2=(c2+clocks[v])%12, s2++; 
+	EACH(u, adj[v]) if (u!=p) dfs(u, v, -1*c);
 }
 
 int main() {
@@ -166,7 +156,7 @@ int main() {
 	freopen("clocktree.in", "r", stdin);
 	freopen("clocktree.out", "w", stdout);
 	read(n);
-	adj.resize(n), clocks.resize(n), change.resize(n);
+	adj.resize(n), clocks.resize(n), color.resize(n, 0);
 	ll x, y, ans=0;
 	FOR(n) {
 		read(x);
@@ -176,12 +166,16 @@ int main() {
 		read(x, y); x--, y--;
 		adj[x].pb(y), adj[y].pb(x);
 	}
-	FOR(n) {
-		temp=clocks;
-		temp[i]=clocks[i] ? clocks[i]-1 : 11;
-		b=0;
-		dfs(i, -1, 0); 
-		ans+=(change[i]%12==0 || change[i]%12==11 || (b && change[i]%12==1));
+	dfs(0, -1, 1);
+	if (c1==c2) {
+		print(n);
+	} else if (abs(c1-c2)==1) {
+		if (c1>c2) print(s1);
+		else print(s2);
+	} else if (abs(c1-c2)==11) {
+		if (c1==0) print(s1);
+		else print(s2);
+	} else {
+		print(0);
 	}
-	print(ans);
 }

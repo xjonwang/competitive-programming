@@ -139,34 +139,81 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
  
-ll n;
-vt<vt<ll>> adj;
+ll n, compCnt, cnt, sz, ans1, ans2, c1, c2;
+vt<vt<ll>> grid, comp;
+vt<vt<vt<ll>>> adj;
+vt<ll> color, sizes;
+vt<vt<bool>> vis1;
 vt<bool> vis;
-vt<ll> sizes;
+unordered_set<ll> trip;
+const int dr[4]={1, -1, 0, 0}, dc[4]={0, 0, 1, -1};
  
-void dfs(ll v, ll& cnt) {
-	vis[v]=1;
-	ll a=0;
-	EACH(u, adj[v]) {
-		ll c=0;
-		dfs(u, c);
-		a+=c;
+void flood(ll r, ll c, ll x) {
+	if (r<0 || r>=n || c<0 || c>=n) return;
+	if (grid[r][c]!=x) {
+		if (comp[r][c]!=-1) {
+			adj[comp[r][c]].pb({x, compCnt, cnt});
+			adj[compCnt].pb({grid[r][c], comp[r][c], cnt});
+			cnt++;
+		}
+		return;
 	}
-	sizes[v]=a;
-	cnt+=a+1;
+	if (vis1[r][c]) return;
+	vis1[r][c]=1;
+	comp[r][c]=compCnt;
+	sz++;
+	FOR(4) flood(r+dr[i], c+dc[i], x);
+}
+
+void dfs(ll v) {
+	if (trip.count(v)) return;
+	sz+=sizes[v];
+	trip.insert(v);
+	ll a=c1==color[v] ? c2 : c1;
+	vt<ll> temp={a, 0ll, 0ll};
+	auto it=lower_bound(all(adj[v]), temp);
+	while (it!=adj[v].end() && it->front()==a) {
+		vis[it->operator[](2)]=1;
+		dfs(it->operator[](1));
+		it++;
+	}
 }
  
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
+	freopen("multimoo.in", "r", stdin);
+	freopen("multimoo.out", "w", stdout);
 	read(n);
-	adj.resize(n), vis.resize(n, 0), sizes.resize(n);
-	ll x;
-	FOR(n-1) {
-		read(x);
-		adj[x-1].pb(i+1);
+	grid.resize(n, vt<ll>(n)), comp.resize(n, vt<ll>(n, -1)), adj.resize(n*n), vis1.resize(n, vt<bool>(n, 0));
+	FOR(n) FOR(j, n) cin >> grid[i][j];
+	FOR(n) {
+		FOR(j, n) {
+			if (comp[i][j]==-1) {
+				sz=0;
+				color.pb(grid[i][j]);
+				flood(i, j, grid[i][j]);
+				sizes.pb(sz);
+				ans1=max(ans1, sz);
+				compCnt++;
+			}
+		}
 	}
-	ll trash=0;
-	dfs(0, trash);
-	print(sizes);
+	vis.resize(cnt, 0);
+	FOR(compCnt) {
+		sort(all(adj[i]));
+		adj[i].erase(unique(all(adj[i])), adj[i].end());
+	}
+	FOR(compCnt) {
+		EACH(e, adj[i]) {
+			if (!vis[e[2]]) {
+				c1=e[0], c2=color[i], sz=0;
+				trip.clear();
+				dfs(i);
+				ans2=max(ans2, sz);
+			}
+		}
+	}
+	print(ans1);
+	print(ans2);
 }
