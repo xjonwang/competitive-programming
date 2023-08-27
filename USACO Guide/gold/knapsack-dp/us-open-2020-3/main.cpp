@@ -143,20 +143,31 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
+	freopen("exercise.in", "r", stdin);
+	freopen("exercise.out", "w", stdout);
+	ll n, m; read(n, m);
+	vt<bool> comp(n+1, 0);
+	vt<ll> prime;
+	FOR(i, 2, n+1) {
+		if (!comp[i]) prime.pb(i);
+		EACH(j, prime) {
+			if (j*i>n) break;
+			comp[j*i]=1;
+			if (i%j==0) break;
 		}
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
+	vt<ll> dp(n+1, 0); dp[0]=1;
+	EACH(p, prime) {
+		vt<ll> t=dp;
+		FOR(n+1) {
+			ll pp=p;
+			while (pp+i<=n) {
+				dp[pp+i]=(dp[pp+i]+t[i]*pp%m)%m;
+				pp*=p;
+			}
+		}
 	}
+	ll ans=0;
+	FOR(n+1) ans=(ans+dp[i])%m;
 	print(ans);
 }

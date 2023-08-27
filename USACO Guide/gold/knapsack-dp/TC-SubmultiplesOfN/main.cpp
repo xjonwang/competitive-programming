@@ -140,23 +140,31 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define mod 1000000007
+
+class SubmultiplesOfN {
+	public: 
+		int count(string s, int n) {
+			vt<vt<ll>> dp(n, vt<ll>(11, 0));
+			FOR(i, 1, 10) dp[0][i]=1;
+			int m=sz(s);
+			FOR(m) {
+				vt<vt<ll>> t=dp;
+				int d=s[i]-'0';
+				FOR(j, n) {
+					ll r=(j*10+d)%n;
+					FOR(k, 11) dp[r][k]=(dp[r][k]+t[j][d])%mod;
+					dp[j][d]=(dp[j][d]-t[j][d]+mod)%mod;
+				}
+			}
+			return dp[0][10];
+		}
+};
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
-		}
-	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
-	}
-	print(ans);
+	string s; int n; read(s, n);
+	SubmultiplesOfN o;
+	print(o.count(s, n));
 }

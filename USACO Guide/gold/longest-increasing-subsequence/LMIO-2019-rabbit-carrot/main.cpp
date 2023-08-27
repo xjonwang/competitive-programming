@@ -143,20 +143,19 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
+	int n, m, x; read(n, m);
+	vt<int> v(n+1); v[0]=0;
+	FOR(n) {
+		read(x);
+		v[i+1]=(i+1)*m-x;
+	}
+	vt<int> dp(n+1, INT_MAX);
+	FOR(n+1) {
+		if (v[i]>=0) {
+			auto it=upper_bound(all(dp), v[i]);
+			*it=v[i];
 		}
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
-	}
-	print(ans);
+	auto it=lower_bound(all(dp), INT_MAX);
+	print(n+1-(it-dp.begin()));
 }

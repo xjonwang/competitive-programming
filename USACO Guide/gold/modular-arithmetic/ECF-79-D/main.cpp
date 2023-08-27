@@ -140,23 +140,49 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define MOD 998244353
+
+int modexp(int x, int n, int m) {
+	if (n==0) return 1%m;
+	ll u=modexp(x, n/2, m);
+	u=(u*u)%m;
+	if (n%2) u=(u*x)%m;
+	return u;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
-	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
+	cin.tie(0); cout.tie(0);
+	ll n, k, a; read(n);
+	vt<ll> cnt(1e6+1, 0);
+	vt<vt<ll>> v(n);
+	ll x=0, y=1, g=0;
+	FOR(n) {
+		read(k);
+		if (g==0) g=k;
+		else g=gcd(g, k);
+		v[i].resize(k);
+		y=y*k%MOD;
+		FOR(j, k) {
+			read(a);
+			cnt[a]++;
+			v[i][j]=a;
 		}
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
+	ll inv=modexp(g, MOD-2, MOD), ninv=modexp(n, MOD-2, MOD);
+	y=y*inv%MOD;
+	y=y*n%MOD;
+	y=y*n%MOD;
+	FOR(n) {
+		ll dinv=modexp(sz(v[i]), MOD-2, MOD);
+		FOR(j, sz(v[i])) {
+			ll t=cnt[v[i][j]]*y%MOD;
+			t=t*dinv%MOD;
+			t=t*ninv%MOD;
+			t=t*ninv%MOD;
+			x=(x+t)%MOD;
+		}
 	}
-	print(ans);
+	y=modexp(y, MOD-2, MOD);
+	print(x*y%MOD);
 }

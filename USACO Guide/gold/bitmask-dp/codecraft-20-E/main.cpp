@@ -143,20 +143,20 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
+	int n, p, k, x; read(n, p, k);
+	vt<pair<int, vt<int>>> v(n, {0, vt<int>(p)});
+	FOR(n) read(v[i].first);
+	FOR(n) read(v[i].second);
+	sort(all(v), [](const pair<int, vt<int>>& a, const pair<int, vt<int>>& b) { return a.first > b.first; });
+	vt<ll> dp(1<<p, 0);
+	FOR(n) {
+		vt<ll> t=dp;
+		FOR(h, 1<<p) {
+			dp[h]=max(dp[h], (t[h] || h==0) ? t[h]+((i-__builtin_popcount(h)<k) ? v[i].first : 0) : 0);
+			FOR(j, p) {
+				if (h&(1<<j)) dp[h]=max(dp[h], (t[h^(1<<j)] || h^(1<<j)==0) ? t[h^(1<<j)]+v[i].second[j] : 0);
+			}
 		}
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
-	}
-	print(ans);
+	print(dp[(1<<p)-1]);
 }

@@ -140,23 +140,41 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define MOD 1000000007
+
+int modexp(int x, int n, int m) {
+	if (n==0) return 1%m;
+	ll u=modexp(x, n/2, m);
+	u=(u*u)%m;
+	if (n%2) u=(u*x)%m;
+	return u;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
-	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
+	cin.tie(0); cout.tie(0);
+	ll n, x, k, m=1, m2=1, s=1, p, c=1, c2=1; read(n);
+	bool h=0;
+	FOR(n) {
+		read(x, k);
+		c=(c*(k+1))%MOD;
+		if (i==n-1 && !h) c2=(c2*(k+1)/2)%(MOD-1), h=k%2;
+		else if (k%2 && !h) c2=(c2*(k+1)/2)%(MOD-1), h=1;
+		else c2=(c2*(k+1))%(MOD-1);
+		ll inv=modexp(x-1, MOD-2, MOD);
+		ll e=modexp(x, k, MOD);
+		ll e2=(e*x-1+MOD)%MOD;
+		s=s*e2%MOD;
+		s=s*inv%MOD;
+		m=m*e%MOD;
+		if (!h) {
+			ll es=modexp(x, k/2, MOD);
+			m2=es*m2%MOD;
 		}
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
+	p=modexp(m, c2, MOD);
+	if (!h) {
+		p=p*m2%MOD;
 	}
-	print(ans);
+	print(c, s, p);
 }

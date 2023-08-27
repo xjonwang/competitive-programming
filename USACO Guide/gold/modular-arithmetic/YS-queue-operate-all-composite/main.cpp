@@ -16,7 +16,7 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
-#define pii pair<int, int>
+#define pii pair<int, d  int>
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -140,23 +140,36 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define MOD 998244353
+
+int modexp(int x, int n, int m) {
+	if (n==0) return 1%m;
+	ll u=modexp(x, n/2, m);
+	u=(u*u)%m;
+	if (n%2) u=(u*x)%m;
+	return u;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
-	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
+	cin.tie(0); cout.tie(0);
+	ll n, a=1, b=0, x, y, z; read(n);
+	queue<pll> q;
+	FOR(n) {
+		read(x);
+		if (x==0) {
+			read(y, z);
+			q.push({y, z});
+			a=a*y%MOD;
+			b=b*y%MOD; b=(b+z)%MOD;
+		} else if (x==1) {
+			pll t=q.front(); q.pop();
+			ll inv=modexp(t.first, MOD-2, MOD);
+			a=a*inv%MOD;
+			b=(b-t.second*a%MOD+MOD)%MOD;
+		} else {
+			read(y);
+			print(((a*y)%MOD+b%MOD)%MOD);
 		}
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
-	}
-	print(ans);
 }

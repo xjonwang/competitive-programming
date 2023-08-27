@@ -140,23 +140,48 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define mod 1000000007
+
+int modexp(int x, int n, int m) {
+	if (n==0) return 1%m;
+	ll u=modexp(x, n/2, m);
+	u=u*u%m;
+	if (n%2) u=u*x%m;
+	return u;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
+	freopen("poetry.in", "r", stdin);
+	freopen("poetry.out", "w", stdout);
+	ll n, m, k, s, c; read(n, m, k);
+	vt<pll> w(n);
+	vt<ll> dp(k, 0), cnt(n+1, 0), l(26, 0);
+	dp[0]=1;
+	read(w);
+	FOR(k) {
+		EACH(p, w) {
+			if (i+p.first<k) dp[i+p.first]=(dp[i+p.first]+dp[i])%mod;
 		}
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
+	EACH(p, w) {
+		cnt[p.second]=(cnt[p.second]+dp[k-p.first])%mod;
+	}
+	char x;
+	FOR(m) {
+		read(x);
+		l[x-'A']++;
+	}
+	ll ans=1;
+	FOR(26) {
+		if (l[i]) {
+			ll a=0;
+			FOR(j, 1, n+1) {
+				if (cnt[j]) a=(a+modexp(cnt[j], l[i]%(mod-1), mod))%mod;
+			}
+			ans=ans*a%mod;
+		}
 	}
 	print(ans);
 }

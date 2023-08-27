@@ -140,23 +140,26 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define mod 1000000007
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
+	int n; read(n);
+	vt<int> dp(1<<n, 0);
+	vt<vt<int>> s(n);
+	FOR((1<<n)-1) s[__builtin_popcount(i)].pb(i);
+	dp[0]=1;
+	bool b;
+	FOR(n) {
+		FOR(j, n) {
+			read(b);
+			if (b) {
+				EACH(k, s[i]) {
+					dp[k^(1<<j)]=(dp[k^(1<<j)]+dp[k])%mod;
+				}
+			}
 		}
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
-	}
-	print(ans);
+	print(dp[(1<<n)-1]);
 }

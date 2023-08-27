@@ -140,23 +140,27 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define mod 1000000007
+
+ll modexp(int x, int n, int m) {
+	if (n==0) return 1%m;
+	ll u=modexp(x, n/2, m);
+	u=u*u%m;
+	if (n%2) u=u*x%m;
+	return u;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
-		}
+	vt<ll> f(1e6+1); f[0]=1;
+	FOR(i, 1, 1e6+1) f[i]=f[i-1]*i%mod; 
+	int n; read(n);
+	ll x, y;
+	FOR(n) {
+		read(x, y);
+		ll num=f[x];
+		ll den=modexp(f[y], mod-2, mod)*modexp(f[x-y], mod-2, mod)%mod;
+		print(num*den%mod);
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
-	}
-	print(ans);
 }

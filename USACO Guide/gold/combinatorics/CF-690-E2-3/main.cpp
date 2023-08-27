@@ -140,23 +140,44 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define mod 1000000007
+
+vt<ll> f(2e5+1), finv(2e5+1);
+
+ll modexp(int x, int n, int m) {
+	if (n==0) return 1%m;
+	ll u=modexp(x, n/2, m);
+	u=u*u%m;
+	if (n%2) u=u*x%m;
+	return u;
+}
+
+void solve() {
+	ll n, m, k, x, ans=0; read(n, m, k);
+	map<ll, ll> cnt;
+	FOR(n) {
+		read(x);
+		cnt[x]++;
+	}
+	auto l=cnt.begin(), r=cnt.begin();
+	ll c=0;
+	while (l!=cnt.end()) {
+		while (r!=cnt.end() && r->first-l->first<=k) c+=r->second, r++;
+		FOR(i, max(m-c+l->second, 1ll), min(l->second+1, m+1)) {
+			ans=(ans+f[l->second]*finv[i]%mod*finv[l->second-i]%mod*f[c-l->second]%mod*finv[m-i]%mod*finv[c-l->second-m+i]%mod)%mod;
+		}
+		c-=l->second; l++;
+	}
+	print(ans);
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
-		}
-	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
-	}
-	print(ans);
+	f[0]=1;
+	FOR(i, 1, 2e5+1) f[i]=f[i-1]*i%mod;
+	finv[2e5]=modexp(f[2e5], mod-2, mod);
+	FOR(i, 2e5-1, -1, -1) finv[i]=finv[i+1]*(i+1)%mod;
+	int t; read(t);
+	FOR(t) solve();
 }

@@ -140,23 +140,69 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+vt<bool> comp(1e4+1, 0);
+vt<int> prime;
+bitset<10001> b[3000];
+vt<int> u, e;
+
+void solve(vt<ld>& dp, int n) {
+	ld a=0; int idx=0;
+	FOR(n+1) {
+		if (umax(a, dp[i])) idx=i;
+	}
+	vt<int> ans(n), len;
+	FOR(n-idx) ans[i]=i+1;
+	int l=n-idx;
+	int i=sz(u)-1, p=-1;
+	while (idx>0) {
+		while (u[i]==p) i--;
+		while (!b[i][idx]) i--;
+		int t=pow(u[i], e[i]);
+		len.pb(t);
+		idx-=t;
+		p=u[i];
+	}
+	sort(all(len));
+	FOR(sz(len)) {
+		FOR(j, len[i]-1) {
+			ans[l+j]=l+j+2;
+		}
+		ans[l+len[i]-1]=l+1;
+		l+=len[i];
+	}
+	print(ans);
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("talent.in", "r", stdin);
-	freopen("talent.out", "w", stdout);
-	int n, w; read(n, w);
-	vt<pii> c(n); read(c);
-	vt<int> dp(1e6+1000, -1); dp[0]=0;
-	EACH(x, c) {
-		vt<int> t=dp;
-		FOR(1e6+1000) {
-			if (i-x.first>=0 && dp[i-x.first]>=0) dp[i]=max(dp[i], t[i-x.first]+x.second);
+	FOR(i, 2, 1e4+1) {
+		if (!comp[i]) prime.pb(i);
+		EACH(p, prime) {
+			if (p*i>1e4) break;
+			comp[p*i]=1;
+			if (i%p==0) break;
 		}
 	}
-	int ans=0;
-	FOR(i, w, 1e6+1000) {
-		ans=max(ans, 1000*dp[i]/i);
+	int t; read(t);
+	vt<int> v(t); read(v);
+	int n=0;
+	EACH(x, v) n=max(n, x);
+	vt<ld> dp(n+1, 0.0);
+	EACH(p, prime) {
+		if (p>n) break;
+		vt<ld> tdp=dp;
+		int pp=p, cnt=1;
+		while (pp<=n) {
+			FOR(i, pp, n+1) {
+				if (tdp[i-pp]+logl(pp)>dp[i]) {
+					dp[i]=tdp[i-pp]+logl(pp);
+					b[sz(u)][i]=1;
+				}
+			}
+			u.pb(p), e.pb(cnt);
+			pp*=p, cnt++;
+		}
 	}
-	print(ans);
+	FOR(t) solve(dp, v[i]);
 }
