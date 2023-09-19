@@ -145,26 +145,21 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
+	int n; read(n);
+	vt<int> dp(1<<n, 0);
+	vt<vt<int>> s(n);
+	FOR((1<<n)-1) s[__builtin_popcount(i)].pb(i);
+	dp[0]=1;
+	bool b;
 	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
+		FOR(j, n) {
+			read(b);
+			if (b) {
+				EACH(k, s[i]) {
+					dp[k^(1<<j)]=(dp[k^(1<<j)]+dp[k])%mod;
 				}
 			}
 		}
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
-	print(ans);
+	print(dp[(1<<n)-1]);
 }

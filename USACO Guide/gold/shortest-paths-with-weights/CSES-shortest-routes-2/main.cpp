@@ -140,31 +140,27 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
-				}
+	int n, m, q; read(n, m, q);
+	vt<vt<ll>> d(n, vt<ll>(n, 1e12));
+	FOR(n) d[i][i]=0;
+	int a, b; ll c;
+	FOR(m) {
+		read(a, b, c); a--, b--;
+		d[a][b]=min(d[a][b], c);
+		d[b][a]=min(d[b][a], c);
+	}
+	FOR(k, n) {
+		FOR(i, n) {
+			FOR(j, n) {
+				d[i][j]=min(d[i][j], d[i][k]+d[k][j]);
 			}
 		}
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
-	print(ans);
+	FOR(q) {
+		read(a, b); a--, b--;
+		print(d[a][b]!=1e12 ? d[a][b] : -1);
+	}
 }

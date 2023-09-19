@@ -140,31 +140,48 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+mt19937 mt_rng(chrono::steady_clock::now().time_since_epoch().count());
+ll randint(ll a, ll b) {
+	return uniform_int_distribution<ll>(a, b)(mt_rng);
+}
+
 #define mod 1000000007
+
+ll modexp(int x, int e, int m) {
+	if (e==0) return 1%m;
+	ll u=modexp(x, e/2, m);
+	u=u*u%m;
+	if (e%2) u=u*x%m;
+	return u;
+}
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
+	ll h, w, n; read(h, w, n);
+	vt<ll> f(h+w+1), finv(h+w+1);
+	f[0]=1; FOR(i, 1, h+w+1) f[i]=f[i-1]*i%mod;
+	finv[h+w]=modexp(f[h+w], mod-2, mod);
+	FOR(i, h+w-1, -1, -1) finv[i]=finv[i+1]*(i+1)%mod;
+	vt<pii> v(n); read(v);
 	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
+	vt<ll> dp(n);
+	int r, c, r1, c1, ans=0;
 	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
-				}
-			}
+		tie(r, c)=v[i];
+		dp[i]+=f[r+c-2]*finv[r-1]%mod*finv[c-1]%mod;
+		dp[i]%=mod;
+		FOR(j, i) {
+			tie(r1, c1)=v[j];
+			if (c1<=c) {
+				dp[i]+=mod-dp[j]*f[r-r1+c-c1]%mod*finv[r-r1]%mod*finv[c-c1]%mod;
+				dp[i]%=mod;
+			}	
 		}
+		ans+=dp[i]*f[h-r+w-c]%mod*finv[h-r]%mod*finv[w-c]%mod;
+		ans%=mod;
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
-	print(ans);
+	ans+=mod-f[h+w-2]*finv[h-1]%mod*finv[w-1]%mod;
+	ans%=mod;
+	print((mod-ans)%mod);
 }

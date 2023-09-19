@@ -140,31 +140,38 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
+vt<vt<int>> adj;
+vt<int> vis, t;
+
+bool dfs(int v, int p=-1) {
+	if (vis[v]==1) return false;
+	vis[v]=1;
+	EACH(u, adj[v]) {
+		if (vis[u]!=2) {
+			if (!dfs(u, v)) return false;
+		}
+	}
+	vis[v]=2;
+	t.pb(v+1);
+	return true;
+}
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
+	int n, m, a, b; read(n, m);
+	adj.resize(n), vis.assign(n, 0);
+	FOR(m) {
+		read(a, b); a--, b--;
+		adj[a].pb(b);
+	}
 	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
-				}
+		if (!vis[i]) {
+			if (!dfs(i)) {
+				print("IMPOSSIBLE");
+				return 0;
 			}
 		}
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
-	print(ans);
+	FOR(i, n-1, -1, -1) cout << t[i] << " ";
 }

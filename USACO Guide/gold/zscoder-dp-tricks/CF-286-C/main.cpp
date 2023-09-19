@@ -140,31 +140,32 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
+mt19937 mt_rng(chrono::steady_clock::now().time_since_epoch().count());
+ll randint(ll a, ll b) {
+	return uniform_int_distribution<ll>(a, b)(mt_rng);
+}
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
+	int n, d, x; read(n, d);
+	vt<int> v(30001, 0);
 	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
-				}
+		read(x);
+		v[x]++;
+	}
+	vt<vt<int>> dp(30001, vt<int>(501, -1));
+	dp[d][250]=v[d]+v[0];
+	int ans=v[d]+v[0];
+	FOR(i, d+1, 30001) {
+		FOR(j, 501) {
+			if (d+(j-250)>0 && d+(j-250)<=i) {
+				umax(dp[i][j], dp[i-(d+(j-250))][j]>=0 ? dp[i-(d+(j-250))][j]+v[i] : -1);
+				umax(dp[i][j], (j+1<=500 && dp[i-(d+(j-250))][j+1]>=0) ? dp[i-(d+(j-250))][j+1]+v[i] : -1);
+				umax(dp[i][j], (j-1>=0 && dp[i-(d+(j-250))][j-1]>=0) ? dp[i-(d+(j-250))][j-1]+v[i] : -1);
+				ans=max(ans, dp[i][j]);
 			}
 		}
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
 	print(ans);
 }

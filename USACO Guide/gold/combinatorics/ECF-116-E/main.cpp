@@ -140,31 +140,32 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
+#define mod 998244353
+
+vt<ll> f(501), finv(501);
+
+ll modexp(int x, int n, int m) {
+	if (n==0) return 1%m;
+	ll u=modexp(x, n/2, m);
+	u=u*u%m;
+	if (n%2) u=u*x%m;
+	return u;
+}
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
+	f[0]=1;
+	FOR(i, 1, 501) f[i]=f[i-1]*i%mod;
+	finv[500]=modexp(f[500], mod-2, mod);
+	FOR(i, 499, -1, -1) finv[i]=finv[i+1]*(i+1)%mod;
 	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
-				}
-			}
+	ll ans=modexp(min(n-1, x), n, mod);
+	FOR(i, n, x+1, n-1) {
+		FOR(j, 2, n+1) {
+			ans+=f[n]*finv[n-j]%mod*finv[j]%mod*modexp(min(n-1, x-i+1), j, mod)%mod*modexp(i-1, n-j, mod)%mod;
+			ans%=mod;
 		}
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
 	print(ans);
 }

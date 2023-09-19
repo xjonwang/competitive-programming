@@ -144,27 +144,37 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 
 int main() {
 	ios::sync_with_stdio(0);
-	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
+	cin.tie(0); cout.tie(0);
+	freopen("palpath.in", "r", stdin);
+	freopen("palpath.out", "w", stdout);
+	int n; read(n);
+	vt<vt<char>> v(n, vt<char>(n)); read(v);
+	vt<vt<vt<int>>> dp(n);
+	FOR(n) dp[i]=vt<vt<int>>(i+1);
 	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
-				}
-			}
+		FOR(j, i, n) {
+			dp[j][i]=vt<int>(n-i, 0);
 		}
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
-	print(ans);
+	FOR(n) dp[i][0][i]=1;
+	char c;
+	FOR(n-1) {
+		FOR(j, i, n) {
+			FOR(k, n-i) {
+				if (dp[j][i][k]) {
+					if (j+1<n) {
+						c=v[j+1][n-j+i-1];
+						if (k-1>=0 && n-i-1-k>=0 && v[k-1][n-i-1-k]==c) dp[j+1][i+1][k-1]+=dp[j][i][k], dp[j+1][i+1][k-1]%=mod;
+						if (n-i-2-k>=0 && v[k][n-i-2-k]==c) dp[j+1][i+1][k]+=dp[j][i][k], dp[j+1][i+1][k]%=mod;
+					}
+					if (i+1<=j) {
+						c=v[j][n-j+i];
+						if (k-1>=0 && n-i-1-k>=0 && v[k-1][n-i-1-k]==c) dp[j][i+1][k-1]+=dp[j][i][k], dp[j][i+1][k-1]%=mod;
+						if (n-i-2-k>=0 && v[k][n-i-2-k]==c) dp[j][i+1][k]+=dp[j][i][k], dp[j][i+1][k]%=mod;
+					}
+				}
+			} 
+		}
+	}
+	print(dp[n-1][n-1][0]);
 }

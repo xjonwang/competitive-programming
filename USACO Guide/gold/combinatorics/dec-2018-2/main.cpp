@@ -140,31 +140,35 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
+	freopen("cowpatibility.in", "r", stdin);
+	freopen("cowpatibility.out", "w", stdout);
+	ll n; int ans=0; read(n);
+	vt<map<ar<int, 5>, int>> mp(5);
+	ar<int, 5> v;
 	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
+		read(v);
+		sort(all(v));
+		mp[4][v]++;
+		FOR(a, 5) {
+			mp[0][{v[a]}]++;
+			FOR(b, a+1, 5) {
+				mp[1][{v[a], v[b]}]++;
+				FOR(c, b+1, 5) {
+					mp[2][{v[a], v[b], v[c]}]++;
+					FOR(d, c+1, 5) {
+						mp[3][{v[a], v[b], v[c], v[d]}]++;
+					}
 				}
 			}
 		}
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
-	print(ans);
+	FOR(5) {
+		for (auto &[k, v] : mp[i]) {
+			ans+=(i%2)? -1*(ll)v*(v-1)/2 : (ll)v*(v-1)/2;
+		}
+	}
+	print(n*(n-1)/2-ans);
 }

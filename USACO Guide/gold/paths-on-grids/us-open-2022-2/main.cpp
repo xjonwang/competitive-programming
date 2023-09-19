@@ -140,16 +140,41 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define mod 1000000007
+
+void solve() {
+	int n; read(n);
+	string s1, s2; read(s1, s2);
+	vt<ll> dp1(n+1, 1), dp2(n+1);
+	dp2[0]=1;
+	FOR(i, n) {
+		FOR(j, n) {
+			if (s1[i]=='0' && s2[j]=='0') {
+				dp2[j+1]=1;
+			} else if (s1[i]=='0') {
+				dp2[j+1]=dp2[j];
+				if (s2[j]=='+') dp2[j+1]=(dp2[j+1]+1)%mod;
+			} else if (s2[j]=='0') {
+				dp2[j+1]=dp1[j+1];
+				if (s1[i]=='+') dp2[j+1]=(dp2[j+1]+1)%mod;
+			} else if (s1[i]!='+' && s2[j]!='+' || s1[i]=='+' && s2[j]=='+') {
+				dp2[j+1]=(dp1[j+1]+dp2[j]-dp1[j]+mod)%mod;
+			} else {
+				if (s1[i]=='1' || s2[j]=='1') {
+					dp2[j+1]=(dp1[j+1]+dp2[j]-dp1[j]+mod)%mod;
+				} else {
+					dp2[j+1]=(dp1[j+1]+dp2[j])%mod;
+				}
+			}
+		}
+		dp1=dp2;
+	}
+	print(dp2[n]);
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	ll n; read(n);
-	vt<int> v(n); read(v);
-	ll l1=0, l2=abs(v[1]-v[0]);
-	FOR(i, 2, n) {
-		ll t=l2;
-		l2=min(l1+abs(v[i]-v[i-2]), l2+abs(v[i]-v[i-1]));
-		l1=t;
-	}
-	print(l2);
+	int t; read(t);
+	FOR(t) solve();
 }

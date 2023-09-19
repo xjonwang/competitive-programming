@@ -140,31 +140,73 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
-
-int main() {
-	ios::sync_with_stdio(0);
-	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
+ll solve(int t, ll x) {
+	ll temp=x;
+	vt<int> digits;
+	while (temp) digits.pb(temp%10), temp/=10;
+	int n=sz(digits);
+	ll dp[n+1][20][20][2][2]={0};
+	dp[n][0][0][0][0]=1;
+	FOR(i, n-1, -1, -1) {
+		FOR(j, 20) {
+			FOR(k, 20) {
+				FOR(d, 10) {
+					if (d==0) {
+						if (d<digits[i]) {
+							if (d==t) {
+								dp[i][j+1][k][1][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][1][1];
+							} else {
+								dp[i][j][k+1][1][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][1][1];
+								dp[i][j][k][1][0]+=dp[i+1][j][k][0][0]+dp[i+1][j][k][1][0];
+							}
+						} else {
+							if (d==t) {
+								dp[i][j+1][k][0][1]+=dp[i+1][j][k][0][1];
+								dp[i][j+1][k][1][1]+=dp[i+1][j][k][1][1];
+							} else {
+								dp[i][j][k+1][0][1]+=dp[i+1][j][k][0][1];
+								dp[i][j][k+1][1][1]+=dp[i+1][j][k][1][1];
+							}
+						}
+					} else if (d<digits[i]) {
+						if (d==t) dp[i][j+1][k][1][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][1][1]+dp[i+1][j][k][0][0]+dp[i+1][j][k][1][0];
+						else dp[i][j][k+1][1][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][1][1]+dp[i+1][j][k][0][0]+dp[i+1][j][k][1][0];
+					} else if (d==digits[i]) {
+						if (d==t) {
+							dp[i][j+1][k][0][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][0][0];
+							dp[i][j+1][k][1][1]+=dp[i+1][j][k][1][1]+dp[i+1][j][k][1][0];
+						} else {
+							dp[i][j][k+1][0][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][0][0];
+							dp[i][j][k+1][1][1]+=dp[i+1][j][k][1][1]+dp[i+1][j][k][1][0];
+						}
+					} else {
+						if (d==t) {
+							dp[i][j+1][k][1][1]+=dp[i+1][j][k][1][1]+dp[i+1][j][k][1][0];
+						} else {
+							dp[i][j][k+1][1][1]+=dp[i+1][j][k][1][1]+dp[i+1][j][k][1][0];
+						}
+					}
 				}
 			}
 		}
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
-	print(ans);
+	ll ans=0;
+	FOR(i, 1, n+1) {
+		FOR(j, min(n-i, i)+1) {
+			ans+=dp[0][i][j][0][1]+dp[0][i][j][1][1];
+		}
+	}
+	return ans;
+}
+
+int main() {
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	//freopen("odometer.in", "r", stdin);
+	//freopen("odometer.out", "w", stdout);
+	ll a, b; read(a, b);
+	ll ca=0, cb=0;
+	FOR(10) ca+=solve(i, a-1);
+	FOR(10) cb+=solve(i, b);
+	print(cb-ca);
 }

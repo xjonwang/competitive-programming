@@ -140,31 +140,25 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
-				}
-			}
-		}
-	}
+	freopen("time.in", "r", stdin);
+	freopen("time.out", "w", stdout);
+	int m, n, c, a, b; read(n, m, c);
+	vt<int> dp(n, 0), v(n); read(v);
+	vt<vt<int>> adj(n);
+	FOR(m) {
+		read(a, b); a--, b--;
+		adj[b].pb(a);
+	}	
 	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
+	FOR(500) {
+		vt<int> t=dp;
+		FOR(j, n) {
+			EACH(u, adj[j]) dp[j]=max(dp[j], (t[u] || u==0) ? t[u]+v[j] : 0); 
+		}
+		ans=max(ans, dp[0]-c*(i+1)*(i+1));
+	}
 	print(ans);
 }

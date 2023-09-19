@@ -140,31 +140,45 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
+struct dijkstra {
+	ll w;
+	int v, d;
+};
+
+struct cmp {
+	bool operator()(const dijkstra& a, const dijkstra& b) {
+		return a.w > b.w;
+	}
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, x; read(n, x);
-	vt<int> v(n); read(v);
-	sort(all(v));
-	vt<vt<ll>> dp(101, vt<ll>(10001, 0));
-	dp[0][5000]=1;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 101) {
-			if (j>n-i) continue;
-			FOR(k, 10001) {
-				if (t[j][k]) {
-					dp[j+1][k-v[i]]+=t[j][k], dp[j+1][k-v[i]]%=mod;
-					dp[j][k]+=(j+1)*t[j][k]%mod, dp[j][k]%=mod;
-					if (j>0) dp[j-1][k+v[i]]+=j*t[j][k]%mod, dp[j-1][k+v[i]]%=mod;
-					dp[j][k]+=mod-t[j][k];
-				}
+	int n, m; read(n, m);
+	int a, b, c;
+	vt<vt<pii>> adj(n);
+	vt<vt<bool>> vis(n, vt<bool>(2, 0));
+	FOR(m) {
+		read(a, b, c); a--, b--;
+		adj[a].pb({b, c});
+	}
+	priority_queue<dijkstra, vt<dijkstra>, cmp> pq;
+	pq.push({0, 0, 0});
+	while (sz(pq)) {
+		dijkstra t=pq.top(); pq.pop();
+		if (vis[t.v][t.d]) continue;
+		if (t.v==n-1 && t.d) {
+			print(t.w);
+			return 0;
+		}
+		vis[t.v][t.d]=1;
+		EACH(u, adj[t.v]) {
+			if (t.d==0) {
+				pq.push({t.w+u.second/2, u.first, 1});
+				pq.push({t.w+u.second, u.first, 0});
+			} else {
+				pq.push({t.w+u.second, u.first, 1});
 			}
 		}
 	}
-	int ans=0;
-	FOR(x+1) ans+=dp[0][5000+i], ans%=mod;
-	print(ans);
 }
