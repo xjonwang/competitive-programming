@@ -140,68 +140,31 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct cmp {
-	bool operator()(const pii& a, const pii& b) const {
-		return a.first > b.first;
-	}
+struct query {
+	int d, h, id;
 };
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, s, t; read(n);
-	vt<pii> v(n);
-	FOR(n) {
-		read(s, t);
-		v[i]={s-t, s+t};
+	int n, m; read(n, m);
+	vt<pii> v(n); read(v);
+	vt<query> q(m);
+	FOR(m) {
+		read(q[i].d, q[i].h);
+		q[i].id=i;
 	}
-	sort(all(v), [] (const pii& a, const pii& b) { return a.first != b.first ? a.first < b.first : a.second > b.second; });
-	vt<int> dp(n, INT_MAX), ind(n), p(n);
-	FOR(n) {
-		int idx=lower_bound(all(dp), v[i].second) - dp.begin();
-		dp[idx]=v[i].second;
-		ind[idx]=i;
-		p[i]=idx>0 ? ind[idx-1] : -1;
-	}
-	int cnt=lower_bound(all(dp), INT_MAX) - dp.begin();
-	vt<pii> lis;
-	set<pii> lis2;
-	set<pii, cmp> lis1;
-	int idx=ind[cnt-1], id=1;
-	while (idx>=0) {
-		lis.pb(v[idx]);
-		lis1.insert({v[idx].second, id});
-		lis2.insert({v[idx].second, id});
-		idx=p[idx];
-		id++;
-	}
-	sort(all(lis), [] (const pii& a, const pii& b) { return a.first != b.first ? a.first < b.first : a.second > b.second; });
-	print(cnt);
-	vt<pii> v1, v2;
-	FOR(n) {
-		auto it=lower_bound(all(lis), v[i], [] (const pii& a, const pii& b) { return a.first != b.first ? a.first < b.first : a.second > b.second; });
-		if (it!=lis.end() && it->second<=v[i].second) {
-			v1.pb(v[i]);
-		} else {
-			v2.pb(v[i]);
+	sort(all(v), [](const pii& a, const pii& b) { return a.second != b.second ? a.second < b.second : a.first > b.first; });
+	sort(all(q), [](const query& a, const query& b) { return a.h != b.h ? a.h < b.h : a.d > b.d; });
+	vt<int> dp(n, 0), ans(m);
+	int i=0;
+	EACH(s, q) {
+		while (i<n && v[i].second<=s.h) {
+			auto it=upper_bound(all(dp), v[i].first, greater<int>());
+			*it=v[i].first;
+			i++;
 		}
+		ans[s.id]=upper_bound(all(dp), s.d, greater<int>()) - dp.begin();
 	}
-	sort(all(v1), [] (const pii& a, const pii& b) { return a.first != b.first ? a.first > b.first : a.second < b.second; });
-	sort(all(v2), [] (const pii& a, const pii& b) { return a.first != b.first ? a.first < b.first : a.second > b.second; });
-	EACH(p, v1) {
-		s=(p.first+p.second)/2; t=p.second-s;
-		auto it=lis1.lower_bound({p.second, 0});
-		id=it->second;
-		print(s, t, id);
-		lis1.erase(it);
-		lis1.insert({s+t, id});
-	}
-	EACH(p, v2) {
-		s=(p.first+p.second)/2; t=p.second-s;
-		auto it=lis2.lower_bound({p.second, 0});
-		id=it->second;
-		print(s, t, id);
-		lis2.erase(it);
-		lis2.insert({s+t, id});
-	}
+	EACH(a, ans) print(a);
 }
