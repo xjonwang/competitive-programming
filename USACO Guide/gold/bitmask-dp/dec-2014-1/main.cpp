@@ -140,33 +140,32 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+struct cow {
+	ll h, w, s;
+};
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, p, k; read(n, p, k);
-	vt<pll> v(n);
-	FOR(n) {
-		read(v[i].first);
-		v[i].second=i;
-	}
-	sort(all(v), [](const pll& a, const pll& b) { return a.first > b.first; });
-	vt<vt<ll>> s(n, vt<ll>(p)); read(s);
-	vt<vt<ll>> dp(1<<p, vt<ll>(p+1, -1));
-	dp[0][0]=0;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 1<<p) {
-			FOR(g, p) {
-				if (!((1<<g) & j)) {
-					FOR(h, p) {
-						if (t[j][h]>=0) dp[j^(1<<g)][i-h<k ? h+1 : h]=max(dp[j^(1<<g)][i-h<k ? h+1 : h], t[j][h]+s[v[i].second][g]-max(v[i].first-v[k+h].first, 0ll));
-					}
-				}
+	freopen("guard.in", "r", stdin);
+	freopen("guard.out", "w", stdout);
+	int n, h; read(n, h);
+	vt<cow> v(n);
+	FOR(n) read(v[i].h, v[i].w, v[i].s);
+	vt<ll> dp(1<<n, -1);
+	dp[0]=LLONG_MAX;
+	int b=0, x=(1<<n)-1;
+	ll ans=-1;
+	do {
+		ll m=0;
+		FOR(n) {
+			if (b & (1<<i)) {
+				m+=v[i].h;
+				dp[b]=max(dp[b], min(dp[b^(1<<i)]-v[i].w, v[i].s));
 			}
 		}
-	}
-	ll ans=0;
-	FOR(p+1) ans=max(ans, dp[(1<<p)-1][i]);
-	FOR(k) ans+=v[i].first;
-	print(ans);
+		if (m>=h) ans=max(ans, dp[b]);
+	} while (b=(b-x)&x);
+	if (ans>=0) print(ans);
+	else print("Mark is too tall");
 }

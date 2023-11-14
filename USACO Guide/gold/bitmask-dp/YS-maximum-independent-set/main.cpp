@@ -17,6 +17,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -143,30 +145,55 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, p, k; read(n, p, k);
-	vt<pll> v(n);
-	FOR(n) {
-		read(v[i].first);
-		v[i].second=i;
+	int n, m, b, x, y; read(n, m); b=n/2;
+	vt<int> adjl(n, 0), adjr(n, 0);
+	FOR(m) {
+		read(x, y);
+		if (y>=b) adjr[x]^=1<<(y-b);
+		else adjl[x]^=1<<y;
+		if (x>=b) adjr[y]^=1<<(x-b);
+		else adjl[y]^=1<<x;
 	}
-	sort(all(v), [](const pll& a, const pll& b) { return a.first > b.first; });
-	vt<vt<ll>> s(n, vt<ll>(p)); read(s);
-	vt<vt<ll>> dp(1<<p, vt<ll>(p+1, -1));
-	dp[0][0]=0;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 1<<p) {
-			FOR(g, p) {
-				if (!((1<<g) & j)) {
-					FOR(h, p) {
-						if (t[j][h]>=0) dp[j^(1<<g)][i-h<k ? h+1 : h]=max(dp[j^(1<<g)][i-h<k ? h+1 : h], t[j][h]+s[v[i].second][g]-max(v[i].first-v[k+h].first, 0ll));
+	vt<int> excl(1<<(n-b), -1);
+	vt<pii> dp(1<<b, {-1, -1}), incl(1<<b);
+	dp[0]={0, 0}, excl[0]=0;
+	int idx;
+	FOR(i, 1, 1<<(n-b)) {
+		idx=__builtin_ctz(i);
+		int t=excl[i^(1<<idx)];
+		if (t<0 || adjr[b+idx] & i) continue;
+		excl[i]=t|adjl[b+idx];
+		if (dp[((1<<b)-1)^excl[i]].f < __builtin_popcount(i)) dp[((1<<b)-1)^excl[i]]={__builtin_popcount(i), i};
+	}
+	incl[0]={0, 0};
+	FOR(i, 1, 1<<b) {
+		int a=0, e=0;
+		FOR(j, b) {
+			if (i & (1<<j)) {
+				pii t=incl[i^(1<<j)];
+				if (t.s & (1<<j)) {
+					if (__builtin_popcount(t.f)>__builtin_popcount(a)) {
+						a=t.f;
+						e=t.s;
+					}
+				} else {
+					if (__builtin_popcount(t.f)+1>__builtin_popcount(a)) {
+						a=t.f|(1<<j);
+						e=t.s|adjl[j];
 					}
 				}
 			}
 		}
+		incl[i]={a, e};
 	}
-	ll ans=0;
-	FOR(p+1) ans=max(ans, dp[(1<<p)-1][i]);
-	FOR(k) ans+=v[i].first;
+	int ans=0, l, r;
+	FOR(1<<b) {
+		if (umax(ans, dp[i].f+__builtin_popcount(incl[i].f))) {
+			l=incl[i].f;
+			r=dp[i].s;
+		}
+	}
 	print(ans);
+	FOR(b) if (l & (1<<i)) cout << i << " ";
+	FOR(n-b) if (r & (1<<i)) cout << b+i << " ";
 }

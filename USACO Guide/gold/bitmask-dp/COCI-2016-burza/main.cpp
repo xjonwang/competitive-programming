@@ -17,6 +17,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -140,33 +142,63 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+vt<vt<int>> adj, hi;
+vt<vt<bool>> child;
+vt<int> height, children;
+int n, k;
+
+pair<int, vt<int>> dfs(int v, int p) {
+	height[v]=p!=-1 ? height[p]+1 : 0;
+	if (height[v]>k) return {0, {}};
+	vt<int> ch; ch.pb(v);
+	int c=(height[v]==k);
+	EACH(u, adj[v]) {
+		if (u==p) continue;
+		pair<int, vt<int>> d=dfs(u, v);
+		c+=d.first;
+		EACH(x, d.second) child[v][x]=1, ch.pb(x);
+	}
+	children[v]=c;
+	if (height[v]>0) hi[height[v]-1].pb(v);
+	return {c, ch};
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, p, k; read(n, p, k);
-	vt<pll> v(n);
-	FOR(n) {
-		read(v[i].first);
-		v[i].second=i;
+	int a, b; read(n, k);
+	if (k*k>=n) {
+		print("DA");
+		return 0;
 	}
-	sort(all(v), [](const pll& a, const pll& b) { return a.first > b.first; });
-	vt<vt<ll>> s(n, vt<ll>(p)); read(s);
-	vt<vt<ll>> dp(1<<p, vt<ll>(p+1, -1));
-	dp[0][0]=0;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 1<<p) {
-			FOR(g, p) {
-				if (!((1<<g) & j)) {
-					FOR(h, p) {
-						if (t[j][h]>=0) dp[j^(1<<g)][i-h<k ? h+1 : h]=max(dp[j^(1<<g)][i-h<k ? h+1 : h], t[j][h]+s[v[i].second][g]-max(v[i].first-v[k+h].first, 0ll));
+	adj.resize(n), height.resize(n), children.resize(n), child.assign(n, vt<bool>(n, 0)), hi.resize(k);
+	FOR(n-1) {
+		read(a, b); a--, b--;
+		adj[a].pb(b), adj[b].pb(a);
+	}
+	int e=dfs(0, -1).first;
+	vt<pair<int, vt<bool>>> dp(1<<k, {0, vt<bool>(n, 1)});
+	FOR(i, 1, 1<<k) {
+		int m=0, idx1, idx2;
+		FOR(j, k) {
+			if (i & (1<<j)) {
+				EACH(v, hi[j]) {
+					if (dp[i^(1<<j)].second[v]) {
+						if (umax(m, dp[i^(1<<j)].first+children[v])) {
+							idx1=j, idx2=v;
+						}
 					}
 				}
 			}
 		}
+		if (m==e) {
+			print("DA");
+			return 0;
+		}
+		dp[i]={m, dp[i^(1<<idx1)].second};
+		FOR(j, n) {
+			if (child[idx2][j] || child[j][idx2]) dp[i].second[j]=0;
+		}
 	}
-	ll ans=0;
-	FOR(p+1) ans=max(ans, dp[(1<<p)-1][i]);
-	FOR(k) ans+=v[i].first;
-	print(ans);
+	print("NE");
 }

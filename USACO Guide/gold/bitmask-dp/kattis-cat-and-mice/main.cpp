@@ -17,6 +17,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -140,33 +142,55 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int main() {
-	ios::sync_with_stdio(0);
-	cin.tie(0);
-	int n, p, k; read(n, p, k);
-	vt<pll> v(n);
-	FOR(n) {
-		read(v[i].first);
-		v[i].second=i;
-	}
-	sort(all(v), [](const pll& a, const pll& b) { return a.first > b.first; });
-	vt<vt<ll>> s(n, vt<ll>(p)); read(s);
-	vt<vt<ll>> dp(1<<p, vt<ll>(p+1, -1));
-	dp[0][0]=0;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 1<<p) {
-			FOR(g, p) {
-				if (!((1<<g) & j)) {
-					FOR(h, p) {
-						if (t[j][h]>=0) dp[j^(1<<g)][i-h<k ? h+1 : h]=max(dp[j^(1<<g)][i-h<k ? h+1 : h], t[j][h]+s[v[i].second][g]-max(v[i].first-v[k+h].first, 0ll));
+struct mouse {
+	int x, y, t;
+};
+
+int n;
+vt<double> slow;
+
+double dist(int x1, int y1, int x2, int y2) {
+	return sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1));
+}
+
+bool check(double d, vt<mouse>& v) {
+	vt<vt<double>> dp(1<<n, vt<double>(n, 1e9));
+	FOR(i, 1, 1<<n) {
+		if (__builtin_popcount(i)==1) {
+			FOR(j, n) {
+				if (i & (1<<j)) dp[i][j]=dist(v[j].x, v[j].y, 0, 0) / d;
+			}
+		} else {
+			FOR(j, n) {
+				if (i & (1<<j)) {
+					FOR(k, n) {
+						if ((i^(1<<j))&(1<<k)) {
+							if (dp[i^(1<<j)][k]<=v[k].t) dp[i][j]=min(dp[i][j], dp[i^(1<<j)][k]+dist(v[k].x, v[k].y, v[j].x, v[j].y)/(d*(slow[__builtin_popcount(i)-1])));
+						}
 					}
 				}
 			}
 		}
 	}
-	ll ans=0;
-	FOR(p+1) ans=max(ans, dp[(1<<p)-1][i]);
-	FOR(k) ans+=v[i].first;
-	print(ans);
+	FOR(n) if (dp[(1<<n)-1][i]<=v[i].t) return true;
+	return false;
+}
+
+int main() {
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	read(n);
+	vt<mouse> v(n);
+	FOR(n) read(v[i].x, v[i].y, v[i].t);
+	double m; read(m);
+	slow.resize(n); slow[0]=1;
+	FOR(i, 1, n) slow[i]=slow[i-1]*m;
+	double l=0, r=3e6;
+	check(2, v);
+	while (r-l>1e-3) {
+		double mid=(r+l)/2;
+		if (check(mid, v)) r=mid;
+		else l=mid;
+	}
+	print((r+l)/2);
 }

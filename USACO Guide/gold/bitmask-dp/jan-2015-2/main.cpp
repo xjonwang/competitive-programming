@@ -143,30 +143,29 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, p, k; read(n, p, k);
-	vt<pll> v(n);
+	freopen("movie.in", "r", stdin);
+	freopen("movie.out", "w", stdout);
+	int n, m, l; read(n, l);
+	vt<vt<int>> v(n);
+	vt<int> d(n);
 	FOR(n) {
-		read(v[i].first);
-		v[i].second=i;
+		read(d[i], m);
+		v[i].resize(m); read(v[i]);
 	}
-	sort(all(v), [](const pll& a, const pll& b) { return a.first > b.first; });
-	vt<vt<ll>> s(n, vt<ll>(p)); read(s);
-	vt<vt<ll>> dp(1<<p, vt<ll>(p+1, -1));
-	dp[0][0]=0;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 1<<p) {
-			FOR(g, p) {
-				if (!((1<<g) & j)) {
-					FOR(h, p) {
-						if (t[j][h]>=0) dp[j^(1<<g)][i-h<k ? h+1 : h]=max(dp[j^(1<<g)][i-h<k ? h+1 : h], t[j][h]+s[v[i].second][g]-max(v[i].first-v[k+h].first, 0ll));
-					}
-				}
+	vt<int> dp(1<<n);
+	dp[0]=0;
+	int b=0, x=(1<<n)-1, ans=n+1, track=0;
+	while (b=(b-x)&x) {
+		int t=-1;
+		FOR(n) {
+			if (b & (1<<i)) {
+				auto it=upper_bound(all(v[i]), dp[b^(1<<i)]);
+				if (it==v[i].begin()) continue;
+				t=max(t, *prev(it)+d[i]);
 			}
 		}
+		dp[b]=t;
+		if (t>=l) ans=min(ans, __builtin_popcount(b));
 	}
-	ll ans=0;
-	FOR(p+1) ans=max(ans, dp[(1<<p)-1][i]);
-	FOR(k) ans+=v[i].first;
-	print(ans);
+	print(ans==n+1 ? -1 : ans);	
 }

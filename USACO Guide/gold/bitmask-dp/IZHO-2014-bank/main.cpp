@@ -17,6 +17,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -143,30 +145,23 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, p, k; read(n, p, k);
-	vt<pll> v(n);
-	FOR(n) {
-		read(v[i].first);
-		v[i].second=i;
-	}
-	sort(all(v), [](const pll& a, const pll& b) { return a.first > b.first; });
-	vt<vt<ll>> s(n, vt<ll>(p)); read(s);
-	vt<vt<ll>> dp(1<<p, vt<ll>(p+1, -1));
-	dp[0][0]=0;
-	FOR(n) {
-		vt<vt<ll>> t=dp;
-		FOR(j, 1<<p) {
-			FOR(g, p) {
-				if (!((1<<g) & j)) {
-					FOR(h, p) {
-						if (t[j][h]>=0) dp[j^(1<<g)][i-h<k ? h+1 : h]=max(dp[j^(1<<g)][i-h<k ? h+1 : h], t[j][h]+s[v[i].second][g]-max(v[i].first-v[k+h].first, 0ll));
-					}
-				}
+	int n, m; read(n, m);
+	vt<int> v(n), b(m); read(v, b);
+	vt<pii> dp(1<<m, {-1, -1});
+	dp[0]={0, 0};
+	FOR(i, 1, 1<<m) {
+		FOR(j, m) {
+			if (i & (1<<j)) {
+				pii t=dp[i^(1<<j)];
+				if (t.f<0) continue;
+				if (t.s+b[j]<v[t.f]) dp[i]={t.f, t.s+b[j]};
+				else if (t.s+b[j]==v[t.f]) dp[i]={t.f+1, 0};
 			}
 		}
+		if (dp[i].f==n) {
+			print("YES");
+			return 0;
+		}
 	}
-	ll ans=0;
-	FOR(p+1) ans=max(ans, dp[(1<<p)-1][i]);
-	FOR(k) ans+=v[i].first;
-	print(ans);
+	print("NO");
 }
