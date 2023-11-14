@@ -1,6 +1,3 @@
-#pragma GCC optimize("Ofast")
-#pragma GCC target("avx2")
-
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -138,34 +135,28 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-void solve() {
-	ll n, ans=0; read(n);
-	vt<ll> v1(n), v2(n); read(v1, v2);
-	vt<unordered_map<ll, ll>> freq(n+1);
-	vt<pll> v(n); FOR(n) v[i]={v1[i], v2[i]}, freq[v1[i]][v2[i]]++;
-	sort(all(v));
-	int l=0, r=0;
-	while (r<n && v[l].first*v[l].first <= n) {
-		vt<ll> mp(n+1, 0);
-		while (r<n && v[r].first==v[l].first) mp[v[r++].second]++;
-		EACH(p, v) {
-			ll temp = v[l].first*p.first-p.second;
-			ans+= (temp<=n && temp>0) ? mp[v[l].first*p.first-p.second] : 0;
-			if (p.first==v[l].first && v[l].first*p.first-p.second==p.second) ans--;
+vt<ll> a;
+ll n, k;
+
+bool check(ll x) {
+	ll d=k;
+	FOR(i, n-1, -1, -1) {
+		ll t=x;
+		if (a[i]<x) {
+			x-=(i+1)*min((x-a[i]-1)/(i+1)+1, d);
+			d-=min((t-a[i]-1)/(i+1)+1, d);
 		}
-		l=r;
+		if (d<=0) break;
 	}
-	while (l<n) {
-		ll i=1;
-		while (v[l].first*i <= v[l].second + n) {
-			ans+=freq[i][v[l].first*i - v[l].second];
-			if (i==v[l].first && v[l].first*i - v[l].second == v[l].second) ans--;
-			i++;
-		}
-		l++;
-	}
-	print(ans/2);
+	return x<=1;
 }
+
+void solve() {
+	read(n, k);
+	a.resize(n); read(a);
+	print(LASTTRUE(check, 1, 4e10+5));
+}
+
 
 int main() {
 	ios::sync_with_stdio(0);

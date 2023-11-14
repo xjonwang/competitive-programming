@@ -1,6 +1,3 @@
-#pragma GCC optimize("Ofast")
-#pragma GCC target("avx2")
-
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -138,33 +135,42 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+struct seg {
+	ll l, r, x;
+};
+
 void solve() {
-	ll n, ans=0; read(n);
-	vt<ll> v1(n), v2(n); read(v1, v2);
-	vt<unordered_map<ll, ll>> freq(n+1);
-	vt<pll> v(n); FOR(n) v[i]={v1[i], v2[i]}, freq[v1[i]][v2[i]]++;
-	sort(all(v));
-	int l=0, r=0;
-	while (r<n && v[l].first*v[l].first <= n) {
-		vt<ll> mp(n+1, 0);
-		while (r<n && v[r].first==v[l].first) mp[v[r++].second]++;
-		EACH(p, v) {
-			ll temp = v[l].first*p.first-p.second;
-			ans+= (temp<=n && temp>0) ? mp[v[l].first*p.first-p.second] : 0;
-			if (p.first==v[l].first && v[l].first*p.first-p.second==p.second) ans--;
+	ll x; read(x);
+	ll t=x;
+	vt<ll> cnt(4e4, 0);
+	FOR(i, 2, 4e4) {
+		while (x%i==0) {
+			x/=i;
+			cnt[i]++;
 		}
-		l=r;
 	}
-	while (l<n) {
-		ll i=1;
-		while (v[l].first*i <= v[l].second + n) {
-			ans+=freq[i][v[l].first*i - v[l].second];
-			if (i==v[l].first && v[l].first*i - v[l].second == v[l].second) ans--;
-			i++;
+	vt<int> ans;
+	ans.pb(t);
+	FOR(i, 5, 4e4) {
+		if (cnt[i]) {
+			ll d=1;
+			FOR(j, cnt[i]) d*=i;
+			while (d>1) {
+				if (d%3==0) {
+					ans.pb(t-t/3), ans.pb(t-t/3-t/3);
+					t/=3, d/=3;
+				} else if (d%2==0) {
+					ans.pb(t/2);
+					t/=2, d/=2;
+				} else {
+					ans.pb(t-t/d);
+					t-=t/d, d--;
+				}
+			}
 		}
-		l++;
 	}
-	print(ans/2);
+	print(sz(ans));
+	print(ans);
 }
 
 int main() {

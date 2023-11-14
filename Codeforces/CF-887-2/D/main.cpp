@@ -19,6 +19,7 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
+#define pii pair<int, int>
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -139,32 +140,29 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 }
 
 void solve() {
-	ll n, ans=0; read(n);
-	vt<ll> v1(n), v2(n); read(v1, v2);
-	vt<unordered_map<ll, ll>> freq(n+1);
-	vt<pll> v(n); FOR(n) v[i]={v1[i], v2[i]}, freq[v1[i]][v2[i]]++;
+	int n; read(n);
+	int s=-1*n;
+	vt<pii> v(n); vt<int> ans(n), a;
+	a.pb(s);
+	FOR(n) {
+		cin >> v[i].first;
+		v[i].second=i;
+	}
 	sort(all(v));
-	int l=0, r=0;
-	while (r<n && v[l].first*v[l].first <= n) {
-		vt<ll> mp(n+1, 0);
-		while (r<n && v[r].first==v[l].first) mp[v[r++].second]++;
-		EACH(p, v) {
-			ll temp = v[l].first*p.first-p.second;
-			ans+= (temp<=n && temp>0) ? mp[v[l].first*p.first-p.second] : 0;
-			if (p.first==v[l].first && v[l].first*p.first-p.second==p.second) ans--;
-		}
-		l=r;
+	FOR(n) {
+		FOR(i, v[i].first-sz(v)+1) a.pb(a.back()+i+1);
+		ans[v[i].second]=a[v[i].first];
 	}
-	while (l<n) {
-		ll i=1;
-		while (v[l].first*i <= v[l].second + n) {
-			ans+=freq[i][v[l].first*i - v[l].second];
-			if (i==v[l].first && v[l].first*i - v[l].second == v[l].second) ans--;
-			i++;
+	vt<bool> e(n, 0);
+	FOR(n) {
+		if (ans[i]>n || ans[i]<-1*n || e[ans[i]]) {
+			print("NO");
+			return;
 		}
-		l++;
+		e[ans[i]]=1;
 	}
-	print(ans/2);
+	print("YES");
+	print(ans);
 }
 
 int main() {

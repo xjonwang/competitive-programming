@@ -1,6 +1,3 @@
-#pragma GCC optimize("Ofast")
-#pragma GCC target("avx2")
-
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -19,6 +16,7 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
+#define pii pair<int, int>
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -138,33 +136,80 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+pll t[4*25000];
+
+pll combine(pll a, pll b) {
+    if (a.first > b.first) 
+        return a;
+    if (b.first > a.first)
+        return b;
+    return make_pair(a.first, a.second + b.second);
+}
+
+void build(vt<ll> a, ll v, ll tl, ll tr) {
+    if (tl == tr) {
+        t[v] = make_pair(a[tl], 1);
+    } else {
+        ll tm = (tl + tr) / 2;
+        build(a, v*2, tl, tm);
+        build(a, v*2+1, tm+1, tr);
+        t[v] = combine(t[v*2], t[v*2+1]);
+    }
+}
+
+pll get_max(ll v, ll tl, ll tr, ll l, ll r) {
+    if (l > r)
+        return make_pair(-LLONG_MAX, 0);
+    if (l == tl && r == tr)
+        return t[v];
+    ll tm = (tl + tr) / 2;
+    return combine(get_max(v*2, tl, tm, l, min(r, tm)), 
+                   get_max(v*2+1, tm+1, tr, max(l, tm+1), r));
+}
+
+void update(ll v, ll tl, ll tr, ll pos, ll new_val) {
+    if (tl == tr) {
+        t[v] = make_pair(new_val, 1);
+    } else {
+        int tm = (tl + tr) / 2;
+        if (pos <= tm)
+            update(v*2, tl, tm, pos, new_val);
+        else
+            update(v*2+1, tm+1, tr, pos, new_val);
+        t[v] = combine(t[v*2], t[v*2+1]);
+    }
+}
+
 void solve() {
-	ll n, ans=0; read(n);
-	vt<ll> v1(n), v2(n); read(v1, v2);
-	vt<unordered_map<ll, ll>> freq(n+1);
-	vt<pll> v(n); FOR(n) v[i]={v1[i], v2[i]}, freq[v1[i]][v2[i]]++;
-	sort(all(v));
-	int l=0, r=0;
-	while (r<n && v[l].first*v[l].first <= n) {
-		vt<ll> mp(n+1, 0);
-		while (r<n && v[r].first==v[l].first) mp[v[r++].second]++;
-		EACH(p, v) {
-			ll temp = v[l].first*p.first-p.second;
-			ans+= (temp<=n && temp>0) ? mp[v[l].first*p.first-p.second] : 0;
-			if (p.first==v[l].first && v[l].first*p.first-p.second==p.second) ans--;
+	int n, x; read(n);
+	vt<vt<int>> v(n);
+	vt<pii> mn(n, {1e9, 1e9});
+	ll s=0;
+	FOR(n) {
+		read(x);
+		v[i].resize(x); read(v[i]);
+		FOR(j, x) {
+			if (v[i][j]<mn[i].first) mn[i].second=mn[i].first, mn[i].first=v[i][j];
+			else if (v[i][j]<mn[i].second) mn[i].second=v[i][j];
 		}
-		l=r;
+		s+=mn[i].first;
 	}
-	while (l<n) {
-		ll i=1;
-		while (v[l].first*i <= v[l].second + n) {
-			ans+=freq[i][v[l].first*i - v[l].second];
-			if (i==v[l].first && v[l].first*i - v[l].second == v[l].second) ans--;
-			i++;
-		}
-		l++;
+	ll ans=0;
+	sort(all(mn), [](const pii& a, const pii& b) { return a.first!=b.first ? a.first>b.first : a.second>b.second; });
+	int m=mn[0].first;
+	vt<ll> pre(n);
+	ll a=0, c=m;
+	FOR(n) {
+		a+=mn[i].second-mn[i].first-max(c-mn[i].first, 0ll);
+		c=min(c, (ll) mn[i].first);
+		pre[i]=a;
 	}
-	print(ans/2);
+	build(pre, 1, 0, n-1);
+	FOR(n) {
+		if (i>0) ans=max(ans, get_max(1, 0, n-1, 0, i-1).first+m-mn[i].first);
+		if (i<n-1) ans=max(ans, get_max(1, 0, n-1, i+1, n-1).first-mn[i].second+mn[i].first+m-mn[i].first);
+	}
+	print(s+ans);
 }
 
 int main() {

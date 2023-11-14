@@ -1,6 +1,3 @@
-#pragma GCC optimize("Ofast")
-#pragma GCC target("avx2")
-
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -138,34 +135,56 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+
 void solve() {
-	ll n, ans=0; read(n);
-	vt<ll> v1(n), v2(n); read(v1, v2);
-	vt<unordered_map<ll, ll>> freq(n+1);
-	vt<pll> v(n); FOR(n) v[i]={v1[i], v2[i]}, freq[v1[i]][v2[i]]++;
-	sort(all(v));
-	int l=0, r=0;
-	while (r<n && v[l].first*v[l].first <= n) {
-		vt<ll> mp(n+1, 0);
-		while (r<n && v[r].first==v[l].first) mp[v[r++].second]++;
-		EACH(p, v) {
-			ll temp = v[l].first*p.first-p.second;
-			ans+= (temp<=n && temp>0) ? mp[v[l].first*p.first-p.second] : 0;
-			if (p.first==v[l].first && v[l].first*p.first-p.second==p.second) ans--;
-		}
-		l=r;
+	ll a, b, c, k; read(a, b, c, k);
+	k--;
+	ll m1=1, m2=1, m3=1;
+	FOR(a) m1*=10;
+	FOR(b) m2*=10;
+	FOR(c) m3*=10;
+	if (m1/10+m2/10>m3-1 || m1+m2-2<m3/10) {
+		print(-1);
+		return;
 	}
-	while (l<n) {
-		ll i=1;
-		while (v[l].first*i <= v[l].second + n) {
-			ans+=freq[i][v[l].first*i - v[l].second];
-			if (i==v[l].first && v[l].first*i - v[l].second == v[l].second) ans--;
-			i++;
-		}
+	ll cnt=0, l=m1/10;
+	while (l<m1 && cnt<k) {
+		cnt+=max(min(m3-1, l+m2-1) - max(m3/10, l+m2/10) + 1, 0ll);
 		l++;
 	}
-	print(ans/2);
+	if ((l>=m1 || l+m2/10>=m3) && cnt<=k) {
+		print(-1);
+		return;
+	}
+	if (cnt==k) {
+		ll ans=max(m2/10, m3/10-l), temp=ans;
+		int d=0;
+		while (temp!=0) d++, temp/=10;
+		if (d!=b) {
+			print(-1);
+			return;
+		}
+		cout << l << " + " << ans << " = " << l+ans << endl;
+	} else {
+		l--;
+		cnt-=max(min(m3-1, l+m2-1) - max(m3/10, l+m2/10) + 1, 0ll);
+		ll ans=max(m2/10+k-cnt, m3/10-l+k-cnt), temp=ans;
+		int d=0;
+		while (temp!=0) d++, temp/=10;
+		if (d!=b) {
+			print(-1);
+			return;
+		}
+		d=0, temp=l+ans;
+		while (temp!=0) d++, temp/=10;
+		if (d!=c) {
+			print(-1);
+			return;
+		}
+		cout << l << " + " << ans << " = " << l+ans << endl;
+	}
 }
+
 
 int main() {
 	ios::sync_with_stdio(0);
