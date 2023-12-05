@@ -143,6 +143,17 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	string s; read(s);
-	
+	int n, k; read(n, k);
+	vt<int> v(n), b(n); read(v, b);
+	vt<vt<int>> dp(n, vt<int>(n, 0));
+	FOR(n) dp[i][i]=0;
+	FOR(i, n-1, -1, -1) {
+		FOR(j, i+1, n) {
+			umax(dp[i][j], dp[i+1][j-1]+(b[j]-b[i]==k ? v[j]+v[i] : 0));
+			FOR(k, i, j) {
+				umax(dp[i][j], dp[i][k]+dp[k+1][j]);
+			} 
+		}
+	}
+	print(dp[0][n-1]);
 }

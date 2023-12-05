@@ -13,10 +13,13 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 
 #define vt vector
 #define pb push_back
+#define pf push_front
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -140,9 +143,27 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+int dr[4]={1, -1, 0, 0}, dc[4]={0, 0, 1, -1};
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	string s; read(s);
-	
+	int n, m, ans=1; read(n, m);
+	vt<vt<char>> v(n, vt<char>(m)); read(v);
+	vt<vt<int>> vis(n, vt<int>(m, 0));
+	vis[0][0]=1;
+	deque<pii> q;
+	q.pb({0, 0});
+	while (sz(q)) {
+		pii t=q.front(); q.pop_front();
+		FOR(4) {
+			int r=t.f+dr[i], c=t.s+dc[i];
+			if (r>=0 && r<n && c>=0 && c<m && !vis[r][c] && v[r][c]!='.') {
+				vis[r][c]=vis[t.f][t.s]+(v[r][c]!=v[t.f][t.s]);
+				umax(ans, vis[r][c]);
+				v[r][c]==v[t.f][t.s] ? q.pf({r, c}) : q.pb({r, c});
+			}
+		}
+	}
+	print(ans);
 }

@@ -172,60 +172,69 @@ int main() {
 			if (i%primes[j]==0) break;
 		}
 	}
-	int n; read(n);
-	vt<int> v(n); read(v);
-	vt<vt<int>> pf(n);
-	map<vt<int>, int, cmpv> cnt;
+	int n, a; read(n);
+	vt<int> cnt(3e5+1, 0);
+	vt<vt<int>> pf(3e5+1);
+	vt<vt<bool>> dp(3e5+1, vt<bool>(8, 0));
 	FOR(n) {
-		if (v[i]==1) {
+		read(a);
+		if (a==1) {
 			print(1);
 			return 0;
-		}
+		} 
+		dp[a][1]=1;
+		vt<int> f;
 		EACH(p, primes) {
-			if (v[i]==1) break;
-			if (v[i]%p==0) pf[i].pb(p);
-			while (v[i]%p==0) v[i]/=p;
+			if (a==1) break;
+			if (a%p==0) f.pb(p);
+			while (a%p==0) a/=p;
 		}
-		if (v[i]!=1) pf[i].pb(v[i]);
-		int m=sz(pf[i]);
+		if (a!=1) f.pb(a);
+		int m=sz(f);
 		FOR(j, 1, 1<<m) {
-			vt<int> f;
-			FOR(k, m) if (j&(1<<k)) f.pb(pf[i][k]);
-			cnt[f]++;
+			int idx=1;
+			FOR(k, m) if (j&(1<<k)) idx*=f[k]; 
+			cnt[idx]++;
 		}
 	}
-	for (auto& [k, v]:cnt) {
-		if (sz(k)==1) {
-			v=n-v;
-			continue;
+	FOR(i, 2, 3e5+1) {
+		vt<int> f;
+		a=i;
+		EACH(p, primes) {
+			if (a==1) break;
+			if (a%p==0) f.pb(p);
+			while (a%p==0) a/=p;
 		}
-		int m=sz(k), s=0;
+		if (a!=1) f.pb(a);
+		pf[i]=f;
+		if (cnt[i]==0) continue;
+		int m=sz(f), s=0;
 		FOR(j, 1, (1<<m)-1) {
-			vt<int> f;
-			FOR(i, m) if (j&(1<<i)) f.pb(k[i]);
-			s+=cnt[f]*(__builtin_popcount(j)%2 ? 1 : -1);	
+			int idx=1;
+			FOR(k, m) if (j&(1<<k)) idx*=f[k]; 
+			s+=cnt[idx]*(__builtin_popcount(j)%2 ? 1 : -1);
 		}
-		v=m%2 ? n-v-s : s-(n-v);
+		cnt[i]=sz(f)%2 ? n-cnt[i]-s : s-(n-cnt[i]);
 	}
-	int ans=1e9;
-	FOR(n) {
-		int m=sz(pf[i]);
-		vt<int> u;
+	FOR(i, 3e5, 1, -1) {
+		bool c=0;
+		FOR(j, 8) c=c||dp[i][j];
+		if (!c) continue;
+		vt<int> f=pf[i];
+		int m=sz(f);
 		FOR(j, 1, 1<<m) {
-			vt<int> f;
-			FOR(k, m) if (j&(1<<k)) f.pb(pf[i][k]);
-			if (cnt[f]) u.pb(j);
-		}
-		vt<int> dp(1<<m, 1e9);
-		dp[0]=0;
-		FOR(j, 1<<m) {
-			if (dp[j]!=1e9) {
-				EACH(k, u) {
-					umin(dp[j|k], dp[j]+1);
-				}
+			int s=1;
+			FOR(k, m) if (j&(1<<k)) s*=f[k];
+			if (cnt[s]) {
+				FOR(k, 2, 8) dp[i/s][k]=dp[i/s][k]||dp[i][k-1];	
 			}
 		}
-		umin(ans, dp[(1<<m)-1]+1);
 	}
-	print(ans==1e9 ? -1 : ans);
+	FOR(i, 2, 8) {
+		if (dp[1][i]) {
+			print(i);
+			return 0;
+		}
+	}
+	print(-1);
 }

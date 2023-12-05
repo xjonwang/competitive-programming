@@ -17,6 +17,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -140,9 +142,28 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+ll solve(ll x) {
+	vt<int> v;
+	while (x) v.pb(x%10), x/=10;
+	int n=sz(v);
+	vt<pll> dp(2, {1, 0}), t;
+	FOR(n) {
+		t=dp;
+		dp[1]={t[1].f, v[i]*t[1].f+t[1].s};
+		FOR(j, v[i]) dp[1].f+=t[0].f, dp[1].s+=j*t[0].f+t[0].s;
+		dp[0]={0, 0};
+		FOR(j, 10) dp[0].f+=t[0].f, dp[0].s+=j*t[0].f+t[0].s;	
+	}
+	return dp[1].s;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	string s; read(s);
-	
+	int n; read(n);
+	ll a, b;
+	FOR(n) {
+		read(a, b);
+		print(solve(b)-solve(max(0ll, a-1)));
+	}
 }

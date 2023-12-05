@@ -140,9 +140,76 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+int f[10][4]={{0, 0, 0, 0}, {0, 0, 0, 0}, {1, 0, 0, 0}, {0, 1, 0, 0}, {2, 0, 0, 0}, {0, 0, 1, 0}, {1, 1, 0, 0}, {0, 0, 0, 1}, {3, 0, 0, 0}, {0, 2, 0, 0}};
+
+ll (* solve(ll x))[55][37][19][19] {
+	vt<int> v;
+	while (x) v.pb(x%10), x/=10;
+	int n=sz(v);
+	ll (*dp)[55][37][19][19] = new ll[2][55][37][19][19];
+	memset(dp, -1, 2 * 55 * 37 * 19 * 19 * sizeof(ll));
+	dp[0][0][0][0][0]=dp[1][0][0][0][0]=0;
+	ll e=1;
+	FOR(n) {
+		ll (*t)[55][37][19][19] = new ll[2][55][37][19][19];
+		memset(t, -1, 2 * 55 * 37 * 19 * 19 * sizeof(ll));
+		FOR(j, 2) {
+			FOR(a, 55) {
+				FOR(b, 37) {
+					FOR(c, 19) {
+						FOR(d, 19) {
+							if (j) {
+								FOR(k, i==n-1 ? 0 : 1, v[i]) {
+									int na=a-f[k][0], nb=b-f[k][1], nc=c-f[k][2], nd=d-f[k][3];
+									if (na>=0 && nb>=0 && nc>=0 && nd>=0 && dp[0][na][nb][nc][nd]>=0) umax(t[j][a][b][c][d], k*e+dp[0][na][nb][nc][nd]);
+								}
+								if (v[i]>0) {
+									int na=a-f[v[i]][0], nb=b-f[v[i]][1], nc=c-f[v[i]][2], nd=d-f[v[i]][3];
+									if (na>=0 && nb>=0 && nc>=0 && nd>=0 && dp[1][na][nb][nc][nd]>=0) umax(t[j][a][b][c][d], v[i]*e+dp[1][na][nb][nc][nd]);
+								}
+							} else {
+								FOR(k, 1, 10) {
+									int na=a-f[k][0], nb=b-f[k][1], nc=c-f[k][2], nd=d-f[k][3];
+									if (na>=0 && nb>=0 && nc>=0 && nd>=0 && dp[0][na][nb][nc][nd]>=0) umax(t[j][a][b][c][d], k*e+dp[0][na][nb][nc][nd]);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		e*=10;
+		delete[] dp;
+		dp=t;
+	}
+	return dp;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	string s; read(s);
-	
+	ll a, b; read(a, b); a--;
+	ll (*dp1)[55][37][19][19]=solve(b);
+	ll (*dp2)[55][37][19][19]=solve(a);
+	ll ea[55], eb[37], ec[19], ed[19];
+	ea[0]=eb[0]=ec[0]=ed[0]=1;
+	FOR(i, 1, 55) ea[i]=ea[i-1]*2;
+	FOR(i, 1, 37) eb[i]=eb[i-1]*3;
+	FOR(i, 1, 19) ec[i]=ec[i-1]*5;
+	FOR(i, 1, 19) ed[i]=ed[i-1]*7;
+	ll ans=b, m=1;
+	FOR(a, 55) {
+		FOR(b, 37) {
+			FOR(c, 19) {
+				FOR(d, 19) {
+					if (ea[a]*eb[b]*ec[c]*ed[d]>m && dp1[1][a][b][c][d]>dp2[1][a][b][c][d]) {
+						m=ea[a]*eb[b]*ec[c]*ed[d];
+						ans=dp1[1][a][b][c][d];
+					}
+				}
+			}
+		}
+	}
+	delete[] dp1, dp2;
+	print(ans);
 }

@@ -140,60 +140,54 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll solve(int t, ll x) {
-	ll temp=x;
-	vt<int> digits;
-	while (temp) digits.pb(temp%10), temp/=10;
-	int n=sz(digits);
-	ll dp[n+1][20][20][2][2]={0};
-	dp[n][0][0][0][0]=1;
+ll solve(vt<int> s, int d, int d2=-1) {
+	ll dp[20][2][20][2]={0};
+	int n=sz(s), nk;
+	ll ans=0;
+	dp[n][0][0][0]=dp[n][1][0][0]=1;
 	FOR(i, n-1, -1, -1) {
-		FOR(j, 20) {
+		FOR(j, 2) {
 			FOR(k, 20) {
-				FOR(d, 10) {
-					if (d==0) {
-						if (d<digits[i]) {
-							if (d==t) {
-								dp[i][j+1][k][1][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][1][1];
-							} else {
-								dp[i][j][k+1][1][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][1][1];
-								dp[i][j][k][1][0]+=dp[i+1][j][k][0][0]+dp[i+1][j][k][1][0];
-							}
-						} else {
-							if (d==t) {
-								dp[i][j+1][k][0][1]+=dp[i+1][j][k][0][1];
-								dp[i][j+1][k][1][1]+=dp[i+1][j][k][1][1];
-							} else {
-								dp[i][j][k+1][0][1]+=dp[i+1][j][k][0][1];
-								dp[i][j][k+1][1][1]+=dp[i+1][j][k][1][1];
-							}
+				if (d2<0) {
+					nk=k-(d==0);
+					if (nk>=0) dp[i][j][k][1]+=(j && s[i]==0) ? dp[i+1][1][nk][0] + dp[i+1][1][nk][1] : dp[i+1][0][nk][0] + dp[i+1][0][nk][1];
+				}
+				if (j) {
+					if (d2<0) {
+						FOR (h, 1, s[i]) {
+							nk=k-(h==d);
+							if (nk>=0) dp[i][j][k][0]+=dp[i+1][0][nk][0]+dp[i+1][0][nk][1];
 						}
-					} else if (d<digits[i]) {
-						if (d==t) dp[i][j+1][k][1][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][1][1]+dp[i+1][j][k][0][0]+dp[i+1][j][k][1][0];
-						else dp[i][j][k+1][1][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][1][1]+dp[i+1][j][k][0][0]+dp[i+1][j][k][1][0];
-					} else if (d==digits[i]) {
-						if (d==t) {
-							dp[i][j+1][k][0][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][0][0];
-							dp[i][j+1][k][1][1]+=dp[i+1][j][k][1][1]+dp[i+1][j][k][1][0];
-						} else {
-							dp[i][j][k+1][0][1]+=dp[i+1][j][k][0][1]+dp[i+1][j][k][0][0];
-							dp[i][j][k+1][1][1]+=dp[i+1][j][k][1][1]+dp[i+1][j][k][1][0];
+						if (s[i]!=0) {
+							nk=k-(d==s[i]);
+							if (nk>=0) dp[i][j][k][0]+=dp[i+1][j][nk][0]+dp[i+1][j][nk][1];
 						}
+						if (i==0 && k>=(n-i+1)/2) ans+=dp[i][j][k][0];
 					} else {
-						if (d==t) {
-							dp[i][j+1][k][1][1]+=dp[i+1][j][k][1][1]+dp[i+1][j][k][1][0];
-						} else {
-							dp[i][j][k+1][1][1]+=dp[i+1][j][k][1][1]+dp[i+1][j][k][1][0];
+						if (d<=s[i]) {
+							nk=k-1;
+							if (nk>=0) dp[i][j][k][d==0]+=d<s[i] ? dp[i+1][0][nk][0]+dp[i+1][0][nk][1] : dp[i+1][j][nk][0]+dp[i+1][j][nk][1];
 						}
+						if (d2<=s[i]) {
+							dp[i][j][k][d2==0]+=d2<s[i] ? dp[i+1][0][k][0]+dp[i+1][0][k][1] : dp[i+1][j][k][0]+dp[i+1][j][k][1];
+						}
+						if (i==0 && (n-i)%2==0 && k==(n-i)/2) ans+=dp[i][j][k][0];
+					}
+				} else {
+					if (d2<0) {
+						FOR (h, 1, 10) {
+							nk=k-(h==d);
+							if (nk>=0) dp[i][j][k][0]+=dp[i+1][j][nk][0]+dp[i+1][j][nk][1];
+						}
+						if (i>0 && k>=(n-i+1)/2) ans+=dp[i][j][k][0];
+					} else {
+						nk=k-1;
+						if (nk>=0) dp[i][j][k][d==0]+=dp[i+1][0][nk][0]+dp[i+1][0][nk][1];
+						dp[i][j][k][d2==0]+=dp[i+1][0][k][0]+dp[i+1][0][k][1];
+						if (i>0 && (n-i)%2==0 && k==(n-i)/2) ans+=dp[i][j][k][0];
 					}
 				}
 			}
-		}
-	}
-	ll ans=0;
-	FOR(i, 1, n+1) {
-		FOR(j, min(n-i, i)+1) {
-			ans+=dp[0][i][j][0][1]+dp[0][i][j][1][1];
 		}
 	}
 	return ans;
@@ -202,11 +196,21 @@ ll solve(int t, ll x) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	//freopen("odometer.in", "r", stdin);
-	//freopen("odometer.out", "w", stdout);
-	ll a, b; read(a, b);
-	ll ca=0, cb=0;
-	FOR(10) ca+=solve(i, a-1);
-	FOR(10) cb+=solve(i, b);
-	print(cb-ca);
+	freopen("odometer.in", "r", stdin);
+	freopen("odometer.out", "w", stdout);
+	ll x, y; read(x, y); --x;
+	vt<int> a, b;
+	while (x) a.pb(x%10), x/=10;
+	while (y) b.pb(y%10), y/=10;
+	reverse(all(a)), reverse(all(b));
+	ll ans=0;
+	FOR(10) ans+=solve(b, i);
+	FOR(10) ans-=solve(a, i);
+	FOR(10) {
+		FOR(j, i+1, 10) {
+			ans-=solve(b, i, j);
+			ans+=solve(a, i, j);
+		}
+	}
+	print(ans);
 }

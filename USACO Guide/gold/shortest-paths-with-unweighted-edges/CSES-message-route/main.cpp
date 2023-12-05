@@ -17,6 +17,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -143,6 +145,30 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	string s; read(s);
-	
+	int n, m, a, b; read(n, m);
+	vt<vt<int>> adj(n);
+	FOR(m) {
+		read(a, b); --a, --b;
+		adj[a].pb(b);
+		adj[b].pb(a);
+	}
+	vt<int> vis(n, INT_MAX), prev(n, -1); vis[0]=1;
+	queue<pii> q;
+	q.push({0, 1});
+	while (sz(q)) {
+		pii t=q.front(); q.pop();
+		EACH(u, adj[t.f]) {
+			if (vis[u]==INT_MAX) {
+				q.push({u, t.s+1});
+				vis[u]=t.s+1;
+				prev[u]=t.f;
+			}
+		}
+	}
+	print(vis[n-1]!=INT_MAX ? to_string(vis[n-1]) : "IMPOSSIBLE");
+	int idx=n-1;
+	vt<int> ans;
+	while (idx!=-1) ans.pb(idx+1), idx=prev[idx];	
+	reverse(all(ans));
+	print(ans);
 }

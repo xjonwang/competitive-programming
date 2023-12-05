@@ -17,6 +17,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -140,9 +142,49 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+int dr[4]={1, -1, 0, 0}, dc[4]={0, 0, 1, -1};
+char dir[4]={'D', 'U', 'R', 'L'};
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	string s; read(s);
-	
+	int n, m; read(n, m);
+	vt<vt<char>> v(n, vt<char>(m));
+	char x; int a1, a2, b1, b2;
+	FOR(n) {
+		FOR(j, m) {
+			read(x); v[i][j]=x;
+			if (x=='A') a1=i, a2=j;
+			if (x=='B') b1=i, b2=j;
+		}
+	}
+	vt<vt<int>> dist(n, vt<int>(m, INT_MAX)), parent(n, vt<int>(m));
+	dist[a1][a2]=0;
+	queue<pii> q; q.push({a1, a2});
+	while (sz(q)) {
+		pii t=q.front(); q.pop();
+		FOR(4) {
+			int r=t.f+dr[i], c=t.s+dc[i];
+			if (r>=0 && r<n && c>=0 && c<m && v[r][c]!='#' && dist[r][c]==INT_MAX) {
+				dist[r][c]=dist[t.f][t.s]+1;
+				parent[r][c]=i;
+				q.push({r, c});
+			}
+		}
+	}
+	if (dist[b1][b2]!=INT_MAX) {
+		print("YES");
+		print(dist[b1][b2]);
+		vt<char> ans;
+		while (b1!=a1 || b2!=a2) {
+			int t1=b1, t2=b2;
+			ans.pb(dir[parent[t1][t2]]);
+			b1=t1-dr[parent[t1][t2]];
+			b2=t2-dc[parent[t1][t2]];
+		}
+		reverse(all(ans));
+		EACH(c, ans) cout << c;
+	} else {
+		print("NO");
+	}
 }

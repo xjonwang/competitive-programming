@@ -140,9 +140,36 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+int k;
+
+bool check(int x) {
+	int t=x;
+	vt<int> v;
+	while (x) v.pb(x%10), x/=10;
+	reverse(all(v));
+	int n=sz(v);
+	int dp[11][2][11]={0};
+	dp[n][0][0]=dp[n][1][0]=1;
+	FOR(i, n-1, -1, -1) {
+		FOR(j, 2) {
+			FOR(h, 11) {
+				if (j) {
+					FOR(g, v[i]) if (h-g>=0) dp[i][j][h]+=dp[i+1][0][h-g];
+					if (h-v[i]>=0) dp[i][j][h]+=dp[i+1][1][h-v[i]];
+				} else {
+					FOR(g, 10) if (h-g>=0) dp[i][j][h]+=dp[i+1][0][h-g];
+				}
+			}
+		}
+	}
+	return dp[0][1][10]>=k;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	string s; read(s);
-	
+	read(k);
+	int l=1, r=1e9;
+	for (int i=r-l; i>0; i/=2) while (l+i<=r && !check(l+i-1)) l+=i;
+	print(l);
 }

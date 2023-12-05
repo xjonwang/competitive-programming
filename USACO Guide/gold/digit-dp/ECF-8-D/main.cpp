@@ -140,9 +140,43 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define MOD 1000000007
+
+int m, d;
+int mod[2000];
+
+void addmod(int& a, int& b) {
+	a=(a+b)%MOD;
+}
+
+int solve(string s, bool b) {
+	int n=sz(s);
+	vt<vt<int>> dp(2, vt<int>(m, 0));
+	dp[1][0]=1;
+	FOR(n) {
+		vt<vt<int>> t(2, vt<int>(m, 0));
+		FOR(j, m) {
+			if (i%2) {
+				if (s[i]-'0'==d) addmod(t[1][(j+d*mod[n-i-1])%m], dp[1][j]);
+				else if (s[i]-'0'>d) addmod(t[0][(j+d*mod[n-i-1])%m], dp[1][j]);
+				addmod(t[0][(j+d*mod[n-i-1])%m], dp[0][j]);
+			} else {
+				FOR(k, s[i]-'0') if (k!=d) addmod(t[0][(j+k*mod[n-i-1])%m], dp[1][j]);
+				if (s[i]-'0'!=d) addmod(t[1][(j+(s[i]-'0')*mod[n-i-1])%m], dp[1][j]);
+				FOR(k, 10) if (k!=d) addmod(t[0][(j+k*mod[n-i-1])%m], dp[0][j]);
+			}
+		}
+		dp=t;
+	}
+	return b ? dp[0][0]+dp[1][0] : dp[0][0];
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	string s; read(s);
-	
+	read(m, d);
+	string a, b; read(a, b);
+	mod[0]=1;
+	FOR(i, 1, 2000) mod[i]=(mod[i-1]*10)%m;
+	print((solve(b, 1)-solve(a, 0)+MOD)%MOD);
 }
