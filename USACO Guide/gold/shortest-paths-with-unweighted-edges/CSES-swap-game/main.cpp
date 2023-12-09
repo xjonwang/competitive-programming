@@ -142,40 +142,48 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll b, e, p;
-int n, m;
-vt<vt<int>> adj;
-
-void bfs(vt<int>& dist, int st) {
-	queue<int> q; q.push(st);
-	dist.assign(n, INT_MAX); dist[st]=0;
-	while (sz(q)) {
-		int v=q.front(); q.pop();
-		EACH(u, adj[v]) {
-			if (dist[u]==INT_MAX) {
-				dist[u]=dist[v]+1;
-				q.push(u);
-			}
-		}
-	}
-}
+int e[9];
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("piggyback.in", "r", stdin);
-	freopen("piggyback.out", "w", stdout);
-	read(b, e, p, n, m);
-	adj.resize(n);
-	int x, y;
-	FOR(m) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	vt<int> v(9); read(v);
+	int st=0, d1, d2, u;
+	e[0]=1;
+	FOR(i, 1, 9) e[i]=10*e[i-1];
+	FOR(9) st+=e[i]*v[i];
+	if (st==987654321) {
+		print(0);
+		return 0;
 	}
-	vt<int> bd, ed, nd;
-	bfs(bd, 0); bfs(ed, 1); bfs(nd, n-1);
-	ll ans=LLONG_MAX;
-	FOR(n) umin(ans, bd[i]*b+ed[i]*e+nd[i]*p);
-	print(ans); 
+	unordered_map<int, int> dist;
+	queue<int> q;
+	q.push(st); dist[st]=0;
+	while (sz(q)) {
+		int t=q.front(); q.pop();
+		FOR(3) {
+			FOR(j, 2) {
+				d1=(t/e[3*i+j])%10, d2=(t/e[3*i+j+1])%10;
+				u=t+(d1-d2)*(e[3*i+j+1]-e[3*i+j]);
+				if (!dist.count(u)) {
+					if (u==987654321) {
+						print(dist[t]+1);
+						return 0;
+					}
+					dist[u]=dist[t]+1;
+					q.push(u);
+				}
+				d1=(t/e[3*j+i])%10, d2=(t/e[3*j+i+3])%10;
+				u=t+(d1-d2)*(e[3*j+i+3]-e[3*j+i]);
+				if (!dist.count(u)) {
+					if (u==987654321) {
+						print(dist[t]+1);
+						return 0;
+					}
+					dist[u]=dist[t]+1;
+					q.push(u);
+				}
+			}
+		}
+	}
 }

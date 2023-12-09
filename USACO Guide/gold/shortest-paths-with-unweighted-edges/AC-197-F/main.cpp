@@ -142,40 +142,33 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll b, e, p;
-int n, m;
-vt<vt<int>> adj;
-
-void bfs(vt<int>& dist, int st) {
-	queue<int> q; q.push(st);
-	dist.assign(n, INT_MAX); dist[st]=0;
-	while (sz(q)) {
-		int v=q.front(); q.pop();
-		EACH(u, adj[v]) {
-			if (dist[u]==INT_MAX) {
-				dist[u]=dist[v]+1;
-				q.push(u);
-			}
-		}
-	}
-}
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("piggyback.in", "r", stdin);
-	freopen("piggyback.out", "w", stdout);
-	read(b, e, p, n, m);
-	adj.resize(n);
-	int x, y;
+	int n, m, x, y; char z; read(n, m);
+	vt<vt<pair<int, char>>> adj(n);
 	FOR(m) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+		read(x, y, z); --x, --y;
+		adj[x].pb({y, z});
+		adj[y].pb({x, z});
 	}
-	vt<int> bd, ed, nd;
-	bfs(bd, 0); bfs(ed, 1); bfs(nd, n-1);
-	ll ans=LLONG_MAX;
-	FOR(n) umin(ans, bd[i]*b+ed[i]*e+nd[i]*p);
-	print(ans); 
+	vt<vt<int>> dist(n, vt<int>(n, -1));
+	queue<pii> q; q.push({0, n-1});
+	int ans=INT_MAX;
+	dist[0][n-1]=0;
+	while (sz(q)) {
+		auto [u, v]=q.front(); q.pop();
+		EACH(e1, adj[u]) {
+			EACH(e2, adj[v]) {
+				if (e1.f==v && e2.f==u) {
+					umin(ans, dist[u][v]+1);
+				} else if (e1.s==e2.s && dist[e1.f][e2.f]==-1) {
+					dist[e1.f][e2.f]=dist[u][v]+2;
+					if (e1.f==e2.f) umin(ans, dist[e1.f][e2.f]);
+					else q.push({e1.f, e2.f});
+				}
+			}
+		}
+	}
+	print(ans==INT_MAX ? -1 : ans);
 }

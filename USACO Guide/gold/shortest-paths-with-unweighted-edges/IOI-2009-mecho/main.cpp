@@ -142,40 +142,61 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll b, e, p;
-int n, m;
-vt<vt<int>> adj;
+int dr[4]={1, -1, 0, 0}, dc[4]={0, 0, 1, -1};
 
-void bfs(vt<int>& dist, int st) {
-	queue<int> q; q.push(st);
-	dist.assign(n, INT_MAX); dist[st]=0;
+int n, k, m1, m2, d1, d2;
+vt<vt<int>> bd;
+vt<vt<char>> g;
+
+bool check(int x) {
+	if (x>=bd[m1][m2]) return false;
+	vt<vt<int>> dist(n, vt<int>(n, -1));
+	queue<pii> q;
+	dist[m1][m2]=0, q.push({m1, m2});
 	while (sz(q)) {
-		int v=q.front(); q.pop();
-		EACH(u, adj[v]) {
-			if (dist[u]==INT_MAX) {
-				dist[u]=dist[v]+1;
-				q.push(u);
+		pii v=q.front(); q.pop();
+		FOR(4) {
+			int r=v.f+dr[i], c=v.s+dc[i];
+			if (r>=0 && r<n && c>=0 && c<n && g[r][c]!='T' && dist[r][c]==-1 && (dist[v.f][v.s]+1)/k+x<bd[r][c]) {
+				if (r==d1 && c==d2) return true;
+				dist[r][c]=dist[v.f][v.s]+1;
+				q.push({r, c});
 			}
 		}
 	}
+	return false;
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("piggyback.in", "r", stdin);
-	freopen("piggyback.out", "w", stdout);
-	read(b, e, p, n, m);
-	adj.resize(n);
-	int x, y;
-	FOR(m) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	read(n, k);
+	g.assign(n, vt<char>(n)), bd.assign(n, vt<int>(n, -1));
+	vt<pii> h;
+	char x;
+	FOR(n) {
+		FOR(j, n) {
+			read(x);
+			g[i][j]=x;
+			if (x=='M') m1=i, m2=j;
+			else if (x=='D') d1=i, d2=j;
+			else if (x=='H') h.pb({i, j});
+		}
 	}
-	vt<int> bd, ed, nd;
-	bfs(bd, 0); bfs(ed, 1); bfs(nd, n-1);
-	ll ans=LLONG_MAX;
-	FOR(n) umin(ans, bd[i]*b+ed[i]*e+nd[i]*p);
-	print(ans); 
+	queue<pii> q;
+	EACH(p, h) bd[p.f][p.s]=0, q.push({p.f, p.s});
+	while (sz(q)) {
+		pii v=q.front(); q.pop();
+		FOR(4) {
+			int r=v.f+dr[i], c=v.s+dc[i];
+			if (r>=0 && r<n && c>=0 && c<n && g[r][c]!='T' && g[r][c]!='D' && bd[r][c]==-1) {
+				bd[r][c]=bd[v.f][v.s]+1;
+				q.push({r, c});
+			}
+		}
+	}
+	bd[d1][d2]=INT_MAX;
+	int l=-1, r=1e6;
+	for (int i=r-l; i>0; i/=2) while (l+i<=r && check(l+i)) l+=i;
+	print(l);
 }

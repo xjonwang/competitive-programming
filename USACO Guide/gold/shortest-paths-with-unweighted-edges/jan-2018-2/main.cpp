@@ -142,40 +142,32 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll b, e, p;
-int n, m;
 vt<vt<int>> adj;
 
-void bfs(vt<int>& dist, int st) {
-	queue<int> q; q.push(st);
-	dist.assign(n, INT_MAX); dist[st]=0;
-	while (sz(q)) {
-		int v=q.front(); q.pop();
-		EACH(u, adj[v]) {
-			if (dist[u]==INT_MAX) {
-				dist[u]=dist[v]+1;
-				q.push(u);
-			}
-		}
+pii dfs(int v, int p, int d) {
+	bool po=0;
+	int mh=INT_MAX, cnt=0;
+	EACH(u, adj[v]) {
+		if (u==p) continue;
+		auto [c, h]=dfs(u, v, d+1);
+		if (h-d<=d) po=1;
+		cnt+=c;
+		umin(mh, h);
 	}
+	return {(po || mh==INT_MAX) ? 1 : cnt, mh==INT_MAX ? d : mh};
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("piggyback.in", "r", stdin);
-	freopen("piggyback.out", "w", stdout);
-	read(b, e, p, n, m);
+	freopen("atlarge.in", "r", stdin);
+	freopen("atlarge.out", "w", stdout);
+	int n, st, x, y; read(n, st);
 	adj.resize(n);
-	int x, y;
-	FOR(m) {
+	FOR(n-1) {
 		read(x, y); --x, --y;
 		adj[x].pb(y);
 		adj[y].pb(x);
 	}
-	vt<int> bd, ed, nd;
-	bfs(bd, 0); bfs(ed, 1); bfs(nd, n-1);
-	ll ans=LLONG_MAX;
-	FOR(n) umin(ans, bd[i]*b+ed[i]*e+nd[i]*p);
-	print(ans); 
+	print(dfs(st-1, -1, 0).f);
 }

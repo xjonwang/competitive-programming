@@ -142,40 +142,98 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll b, e, p;
-int n, m;
-vt<vt<int>> adj;
+struct cake {
+	int vo, vs, idx;
+	cake() {}
+	cake(int a, int b, int c) : vo(a), vs(b), idx(c) {}
+};
 
-void bfs(vt<int>& dist, int st) {
-	queue<int> q; q.push(st);
-	dist.assign(n, INT_MAX); dist[st]=0;
-	while (sz(q)) {
-		int v=q.front(); q.pop();
-		EACH(u, adj[v]) {
-			if (dist[u]==INT_MAX) {
-				dist[u]=dist[v]+1;
-				q.push(u);
+int n, d;
+auto cmp=[](const cake& a, const cake& b) { return a.vo<b.vo; };
+
+void update(int v, int idx, bool id, queue<pair<int, bool>>& q, set<int>& vis, vt<cake>& c, vt<int>& dist, vt<int>& disto) {
+	if (sz(vis)==0) {
+		auto it=lower_bound(all(c), cake(v-d, 0, 0), cmp);
+		while (it!=c.end() && it->vo<=v) {
+			if (dist[it->idx]==-1) {
+				dist[it->idx]=disto[idx]+1;
+				q.push({it->idx, id});
 			}
+			it++;
+		}
+		vis.insert(v);
+		return;
+	}
+	auto rb=vis.lower_bound(v);
+	if (rb==vis.end()) {
+		auto it=upper_bound(all(c), cake(max(*prev(rb), v-d-1), 0, 0), cmp);
+		while (it!=c.end() && it->vo<=v) {
+			if (dist[it->idx]==-1) {
+				dist[it->idx]=disto[idx]+1;
+				q.push({it->idx, id});
+			}
+			it++;
+		}
+	} else if (rb==vis.begin()) {
+		auto it=lower_bound(all(c), cake(v-d, 0, 0), cmp);
+		while (it!=c.end() && it->vo<min(*rb-d, v+1)) {
+			if (dist[it->idx]==-1) {
+				dist[it->idx]=disto[idx]+1;
+				q.push({it->idx, id});
+			}
+			it++;
+		}
+	} else {
+		auto it=upper_bound(all(c), cake(max(*prev(rb), v-d-1), 0, 0), cmp);
+		while (it!=c.end() && it->vo<min(*rb-d, v+1)) {
+			if (dist[it->idx]==-1) {
+				dist[it->idx]=disto[idx]+1;
+				q.push({it->idx, id});
+			}
+			it++;
 		}
 	}
+	vis.insert(v);
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("piggyback.in", "r", stdin);
-	freopen("piggyback.out", "w", stdout);
-	read(b, e, p, n, m);
-	adj.resize(n);
-	int x, y;
-	FOR(m) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	freopen("piepie.in", "r", stdin);
+	freopen("piepie.out", "w", stdout);
+	read(n, d);
+	vt<pii> v1(n), v2(n); read(v1, v2);
+	vt<cake> b(n), e(n);
+	FOR(n) {
+		b[i]={v1[i].s, v1[i].f, i};
+		e[i]={v2[i].f, v2[i].s, i};
 	}
-	vt<int> bd, ed, nd;
-	bfs(bd, 0); bfs(ed, 1); bfs(nd, n-1);
-	ll ans=LLONG_MAX;
-	FOR(n) umin(ans, bd[i]*b+ed[i]*e+nd[i]*p);
-	print(ans); 
+	sort(all(b), cmp);
+	sort(all(e), cmp);
+	set<int> visb, vise;
+	vt<int> bd(n, -1), ed(n, -1);
+	queue<pair<int, bool>> q;
+	FOR(n) {
+		if (v1[i].s==0) {
+			bd[i]=1;
+			q.push({i, 0});
+		}
+	}
+	FOR(n) {
+		if (v2[i].f==0) {
+			ed[i]=1;
+			q.push({i, 1});
+		}
+	}
+	while (sz(q)) {
+		auto [idx, id]=q.front(); q.pop();
+		if (id) {
+			auto [vb, ve]=v2[idx];
+			update(ve, idx, 0, q, vise, b, bd, ed);
+		} else {
+			auto [vb, ve]=v1[idx];
+			update(vb, idx, 1, q, visb, e, ed, bd);
+		}
+	}
+	EACH(a, bd) print(a);
 }

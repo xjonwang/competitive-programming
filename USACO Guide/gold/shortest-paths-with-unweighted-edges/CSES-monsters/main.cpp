@@ -141,41 +141,85 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 		write(' ');
 	print(t...);
 }
+int dr[4]={1, -1, 0, 0}, dc[4]={0, 0, 1, -1};
+char dir[4]={'D', 'U', 'R', 'L'};
 
-ll b, e, p;
 int n, m;
-vt<vt<int>> adj;
+vt<vt<char>> g;
 
-void bfs(vt<int>& dist, int st) {
-	queue<int> q; q.push(st);
-	dist.assign(n, INT_MAX); dist[st]=0;
+pair<vt<vt<int>>, vt<vt<int>>> bfs(vt<pii> st) {
+	vt<vt<int>> dist(n, vt<int>(m, INT_MAX)), parent(n, vt<int>(m));
+	queue<pii> q;
+	EACH(p, st) q.push(p), dist[p.f][p.s]=0;
 	while (sz(q)) {
-		int v=q.front(); q.pop();
-		EACH(u, adj[v]) {
-			if (dist[u]==INT_MAX) {
-				dist[u]=dist[v]+1;
-				q.push(u);
+		pii v=q.front(); q.pop();
+		FOR(4) {
+			int r=v.f+dr[i], c=v.s+dc[i];
+			if (r>=0 && r<n && c>=0 && c<m && g[r][c]!='#' && dist[r][c]==INT_MAX) {
+				dist[r][c]=dist[v.f][v.s]+1;
+				parent[r][c]=i;
+				q.push({r, c});
 			}
 		}
 	}
+	return {dist, parent};
+}
+
+void path(vt<vt<int>> parent, int s1, int s2, int a1, int a2) {
+	vt<char> ans;
+	while (s1!=a1 || s2!=a2) {
+		int t1=s1, t2=s2;
+		ans.pb(dir[parent[t1][t2]]);
+		s1=t1-dr[parent[t1][t2]];
+		s2=t2-dc[parent[t1][t2]];
+	}
+	reverse(all(ans));
+	EACH(a, ans) cout << a;
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("piggyback.in", "r", stdin);
-	freopen("piggyback.out", "w", stdout);
-	read(b, e, p, n, m);
-	adj.resize(n);
-	int x, y;
-	FOR(m) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	read(n, m);
+	g.assign(n, vt<char>(m));	
+	pii a;
+	vt<pii> mn;
+	char x;
+	FOR(n) {
+		FOR(j, m) {
+			read(x);
+			g[i][j]=x;
+			if (x=='M') mn.pb({i, j});
+			else if (x=='A') a={i, j};
+		}
 	}
-	vt<int> bd, ed, nd;
-	bfs(bd, 0); bfs(ed, 1); bfs(nd, n-1);
-	ll ans=LLONG_MAX;
-	FOR(n) umin(ans, bd[i]*b+ed[i]*e+nd[i]*p);
-	print(ans); 
+	auto [da, pa]=bfs({a});
+	auto [dm, pm]=bfs(mn);
+	FOR(n) {
+		if (da[i][0]<dm[i][0]) {
+			print("YES");
+			print(da[i][0]);
+			path(pa, i, 0, a.f, a.s);
+			return 0;
+		} else if (da[i][m-1]<dm[i][m-1]) {
+			print("YES");
+			print(da[i][m-1]);
+			path(pa, i, m-1, a.f, a.s);
+			return 0;
+		}
+	}
+	FOR(m) {
+		if (da[0][i]<dm[0][i]) {
+			print("YES");
+			print(da[0][i]);
+			path(pa, 0, i, a.f, a.s);
+			return 0;
+		} else if (da[n-1][i]<dm[n-1][i]) {
+			print("YES");
+			print(da[n-1][i]);
+			path(pa, n-1, i, a.f, a.s);
+			return 0;
+		}
+	}
+	print("NO");
 }

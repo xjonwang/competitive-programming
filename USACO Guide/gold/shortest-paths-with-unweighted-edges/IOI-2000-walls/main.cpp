@@ -142,40 +142,60 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll b, e, p;
-int n, m;
-vt<vt<int>> adj;
+int n, m, l;
+vt<int> towns;
+vt<vt<int>> adj, v, g;
 
-void bfs(vt<int>& dist, int st) {
-	queue<int> q; q.push(st);
-	dist.assign(n, INT_MAX); dist[st]=0;
+int bfs(int st) {
+	vt<int> dist(m, -1);
+	vt<bool> vis(l, 0);
+	int cost=0;
+	FOR(l) if (g[st][towns[i]]!=-1) vis[i]=1;
+	queue<int> q;
+	dist[st]=0, q.push(st);
 	while (sz(q)) {
-		int v=q.front(); q.pop();
-		EACH(u, adj[v]) {
-			if (dist[u]==INT_MAX) {
-				dist[u]=dist[v]+1;
+		int t=q.front(); q.pop();
+		EACH(u, adj[t]) {
+			if (dist[u]==-1) {
+				dist[u]=dist[t]+1;
+				FOR(l) if (!vis[i] && g[u][towns[i]]!=-1) cost+=dist[u], vis[i]=1;
 				q.push(u);
 			}
 		}
 	}
+	return cost;
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("piggyback.in", "r", stdin);
-	freopen("piggyback.out", "w", stdout);
-	read(b, e, p, n, m);
-	adj.resize(n);
-	int x, y;
+	read(m, n, l);
+	towns.resize(l); read(towns);
+	v.resize(m), g.assign(m, vt<int>(n+1, -1));
+	int a;
 	FOR(m) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+		read(a);
+		vt<int> t(a); read(t);
+		v[i]=t;
+		FOR(j, a) g[i][t[j]]=t[(j+1)%a];
+	}	
+	adj.resize(m);
+	FOR(m) {
+		FOR(j, i+1, m) {
+			FOR(k, sz(v[i])) {
+				if (g[j][v[i][k]]==v[i][(k+1)%sz(v[i])] || g[j][v[i][(k+1)%sz(v[i])]]==v[i][k]) {
+					adj[i].pb(j);
+					adj[j].pb(i);
+					break;
+				}
+			}
+		}
 	}
-	vt<int> bd, ed, nd;
-	bfs(bd, 0); bfs(ed, 1); bfs(nd, n-1);
-	ll ans=LLONG_MAX;
-	FOR(n) umin(ans, bd[i]*b+ed[i]*e+nd[i]*p);
-	print(ans); 
+	bfs(0);
+	int mi=INT_MAX, ans;
+	FOR(m) {
+		if (umin(mi, bfs(i))) ans=i+1;
+	}
+	print(mi);
+	print(ans);
 }

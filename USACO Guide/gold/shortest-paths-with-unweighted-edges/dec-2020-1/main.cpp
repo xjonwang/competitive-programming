@@ -142,40 +142,74 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll b, e, p;
-int n, m;
-vt<vt<int>> adj;
-
-void bfs(vt<int>& dist, int st) {
-	queue<int> q; q.push(st);
-	dist.assign(n, INT_MAX); dist[st]=0;
-	while (sz(q)) {
-		int v=q.front(); q.pop();
-		EACH(u, adj[v]) {
-			if (dist[u]==INT_MAX) {
-				dist[u]=dist[v]+1;
-				q.push(u);
-			}
-		}
-	}
-}
+int dr[4]={1, -1, 0, 0}, dc[4]={0, 0, 1, -1};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("piggyback.in", "r", stdin);
-	freopen("piggyback.out", "w", stdout);
-	read(b, e, p, n, m);
-	adj.resize(n);
-	int x, y;
-	FOR(m) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	int n, d; read(n, d);
+	vt<vt<char>> v(n, vt<char>(n));
+	char x;
+	vt<pii> b, st;
+	FOR(n) {
+		FOR(j, n) {
+			read(x);
+			if (x=='#') b.pb({i, j});
+			else if (x=='S') st.pb({i, j});
+		}
 	}
-	vt<int> bd, ed, nd;
-	bfs(bd, 0); bfs(ed, 1); bfs(nd, n-1);
-	ll ans=LLONG_MAX;
-	FOR(n) umin(ans, bd[i]*b+ed[i]*e+nd[i]*p);
-	print(ans); 
+	vt<vt<int>> bd(n, vt<int>(n, INT_MAX));
+	queue<pii> q;
+	EACH(p, b) bd[p.f][p.s]=0, q.push(p);
+	while (sz(q)) {
+		auto [pr, pc]=q.front(); q.pop();
+		FOR(4) {
+			int r=pr+dr[i], c=pc+dc[i];
+			if (r>=0 && r<n && c>=0 && c<n && bd[r][c]==INT_MAX) {
+				bd[r][c]=bd[pr][pc]+1;
+				q.push({r, c});
+			}
+		}
+	}
+	vt<vt<int>> rd(n, vt<int>(n, INT_MAX));
+	vt<vt<pii>> rp(n/2); rp[0]=st;
+	EACH(p, st) rd[p.f][p.s]=0, q.push(p);
+	while (sz(q)) {
+		auto [pr, pc]=q.front(); q.pop();
+		FOR(4) {
+			int r=pr+dr[i], c=pc+dc[i];
+			if (r>=0 && r<n && c>=0 && c<n && rd[r][c]==INT_MAX && rd[pr][pc]/d<bd[r][c]) {
+				rp[min(bd[r][c]-1, rd[r][c]/d)].pb({r, c});
+				rd[r][c]=rd[pr][pc]+1;
+				if (rd[r][c]/d<bd[r][c]) q.push({r, c});
+			}
+		}
+	}
+	vt<vt<int>> dist(n, vt<int>(n, INT_MAX));
+	int l;
+	FOR(i, n/2-1, -1, -1) {
+		if (sz(rp[i])) {
+			EACH(p, rp[i]) dist[p.f][p.s]=-i, q.push(p);
+			l=i;
+			break;
+		}
+	}
+	while (sz(q)) {
+		auto [pr, pc]=q.front(); q.pop();
+		if (-dist[pr][pc]<l) {
+			--l;
+			EACH(p, rp[l]) dist[p.f][p.s]=-l, q.push(p);
+		}
+		if (dist[pr][pc]==0) break;
+		FOR(4) {
+			int r=pr+dr[i], c=pc+dc[i];
+			if (r>=0 && r<n && c>=0 && c<n && dist[r][c]==INT_MAX) {
+				dist[r][c]=dist[pr][pc]+1;
+				q.push({r, c});
+			}
+		}
+	}
+	int ans=0;
+	FOR(n) FOR(j, n) ans+=dist[i][j]<=0;
+	print(ans);
 }

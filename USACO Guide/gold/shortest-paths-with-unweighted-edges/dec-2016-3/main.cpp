@@ -142,40 +142,55 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-ll b, e, p;
-int n, m;
-vt<vt<int>> adj;
-
-void bfs(vt<int>& dist, int st) {
-	queue<int> q; q.push(st);
-	dist.assign(n, INT_MAX); dist[st]=0;
-	while (sz(q)) {
-		int v=q.front(); q.pop();
-		EACH(u, adj[v]) {
-			if (dist[u]==INT_MAX) {
-				dist[u]=dist[v]+1;
-				q.push(u);
-			}
-		}
-	}
-}
+struct node {
+	int x, y;
+	bool d;
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("piggyback.in", "r", stdin);
-	freopen("piggyback.out", "w", stdout);
-	read(b, e, p, n, m);
-	adj.resize(n);
-	int x, y;
-	FOR(m) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	freopen("lasers.in", "r", stdin);
+	freopen("lasers.out", "w", stdout);
+	int n, l1, l2, b1, b2, x, y; read(n, l1, l2, b1, b2);
+	unordered_map<int, vt<int>> adjv, adjh;
+	FOR(n) {
+		read(x, y);
+		adjv[x].pb(y);
+		adjh[y].pb(x);
 	}
-	vt<int> bd, ed, nd;
-	bfs(bd, 0); bfs(ed, 1); bfs(nd, n-1);
-	ll ans=LLONG_MAX;
-	FOR(n) umin(ans, bd[i]*b+ed[i]*e+nd[i]*p);
-	print(ans); 
+	unordered_set<int> visv, vish;
+	queue<node> q; q.push({l1, l2, 0}), q.push({l1, l2, 1});
+	unordered_map<int, unordered_map<int, int>> dist; dist[l1][l2]=0;
+	while (sz(q)) {
+		auto [x, y, d]=q.front(); q.pop();
+		if (d) {
+			if (y==b2) {
+				print(dist[x][y]);
+				return 0;
+			}
+			if (visv.count(y)) continue;
+			visv.insert(y);
+			EACH(u, adjh[y]) {
+				if (!dist.count(u) || !dist[u].count(y)) {
+					dist[u][y]=dist[x][y]+1;
+					q.push({u, y, 0});
+				}
+			}
+		} else {
+			if (x==b1) {
+				print(dist[x][y]);
+				return 0;
+			}
+			if (vish.count(x)) continue;
+			vish.insert(x);
+			EACH(u, adjv[x]) {
+				if (!dist[x].count(u)) {
+					dist[x][u]=dist[x][y]+1;
+					q.push({x, u, 1});
+				}
+			}
+		}
+	}
+	print(-1);
 }
