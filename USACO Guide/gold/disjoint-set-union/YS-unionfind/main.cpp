@@ -140,26 +140,32 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
+struct dsu {
+	vt<int> e;
+	dsu(int n) : e(vt<int>(n, -1)) {}
+	int get(int x) { return e[x]<0 ? x : e[x]=get(e[x]); }
+	int size(int x) { return e[x]<0 ? -e[x] : size(e[x]); }
+	bool unite(int x, int y) {
+		x=get(x), y=get(y);
+		if (x==y) return false;
+		if (e[x]>e[y]) swap(x, y);
+		e[x]+=e[y];
+		e[y]=x;
+		return true;
+	}
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n; read(n);
-	vt<int> dp(1<<n, 0);
-	vt<vt<int>> s(n);
-	FOR((1<<n)-1) s[__builtin_popcount(i)].pb(i);
-	dp[0]=1;
-	bool b;
-	FOR(n) {
-		FOR(j, n) {
-			read(b);
-			if (b) {
-				EACH(k, s[i]) {
-					dp[k^(1<<j)]=(dp[k^(1<<j)]+dp[k])%mod;
-				}
-			}
+	int n, q, t, u, v; read(n, q);
+	dsu d(n);
+	FOR(q) {
+		read(t, u, v);
+		if (t) {
+			print(d.get(u)==d.get(v) ? 1 : 0);
+		} else {
+			d.unite(u, v);	
 		}
 	}
-	print(dp[(1<<n)-1]);
 }

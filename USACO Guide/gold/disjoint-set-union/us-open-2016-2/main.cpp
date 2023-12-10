@@ -140,20 +140,17 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int s=1;
-
 struct dsu {
 	vt<int> e;
-	void init(int n) { e=vt<int>(n, -1); }
+	dsu(int n) : e(vt<int>(n, -1)) {}
 	int get(int x) { return e[x]<0 ? x : e[x]=get(e[x]); }
-	int size(int x) { return e[x]<0 ? -1*e[x] : size(e[x]); }
+	int size(int x) { return e[x]<0 ? -e[x] : size(e[x]); }
 	bool unite(int x, int y) {
 		x=get(x), y=get(y);
 		if (x==y) return false;
 		if (e[x]>e[y]) swap(x, y);
 		e[x]+=e[y];
 		e[y]=x;
-		s=max(s, -1*e[x]);
 		return true;
 	}
 };
@@ -161,12 +158,24 @@ struct dsu {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, a, b; read(n, m);
-	dsu d; d.init(n);
-	int cnt=n;
+	freopen("closing.in", "r", stdin);
+	freopen("closing.out", "w", stdout);
+	int n, m, x, y; read(n, m);
+	vt<vt<int>> adj(n);
 	FOR(m) {
-		read(a, b); a--, b--;
-		cnt-=d.unite(a, b);
-		print(cnt, s);
+		read(x, y); --x, --y;
+		adj[x].pb(y);
+		adj[y].pb(x);
 	}
+	dsu d(n);
+	vt<int> r(n); read(r);
+	EACH(x, r) --x;
+	vt<bool> vis(n, 0);
+	vt<string> ans(n);
+	FOR(i, n-1, -1, -1) {
+		EACH(v, adj[r[i]]) if (vis[v]) d.unite(r[i], v);
+		ans[i]=d.size(r[i])==n-i ? "YES" : "NO"; 
+		vis[r[i]]=1;
+	}
+	EACH(a, ans) print(a);
 }

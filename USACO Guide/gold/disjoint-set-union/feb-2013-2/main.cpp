@@ -17,6 +17,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -140,33 +142,48 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int s=1;
-
 struct dsu {
 	vt<int> e;
-	void init(int n) { e=vt<int>(n, -1); }
+	int sz=1;
+	dsu(int n) : e(vt<int>(n, -1)) {}
 	int get(int x) { return e[x]<0 ? x : e[x]=get(e[x]); }
-	int size(int x) { return e[x]<0 ? -1*e[x] : size(e[x]); }
+	int size(int x) { return e[x]<0 ? -e[x] : size(e[x]); }
 	bool unite(int x, int y) {
 		x=get(x), y=get(y);
 		if (x==y) return false;
 		if (e[x]>e[y]) swap(x, y);
 		e[x]+=e[y];
 		e[y]=x;
-		s=max(s, -1*e[x]);
+		umax(sz, -e[x]);
 		return true;
 	}
+};
+
+struct edge {
+	int u, v, w;
 };
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, a, b; read(n, m);
-	dsu d; d.init(n);
-	int cnt=n;
-	FOR(m) {
-		read(a, b); a--, b--;
-		cnt-=d.unite(a, b);
-		print(cnt, s);
+	freopen("tractor.in", "r", stdin);
+	freopen("tractor.out", "w", stdout);
+	int n, r, c; read(n);
+	vt<vt<int>> v(n, vt<int>(n)); read(v);
+	vt<edge> e;
+	FOR(n) {
+		FOR(j, n) {
+			if (i+1<n) e.pb({i*n+j, (i+1)*n+j, abs(v[i][j]-v[i+1][j])});
+			if (j+1<n) e.pb({i*n+j, i*n+j+1, abs(v[i][j]-v[i][j+1])}); 
+		}
 	}
+	sort(all(e), [](const edge& a, const edge& b) { return a.w<b.w; });
+	dsu d(n*n);
+	int idx=0, ans=0;
+	while (d.sz<(n*n)/2+(n*n)%2) {
+		d.unite(e[idx].u, e[idx].v);
+		umax(ans, e[idx].w);
+		idx++;
+	}
+	print(ans);
 }

@@ -17,6 +17,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
+#define f first
+#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -140,20 +142,34 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int s=1;
+int n, m;
+vt<vt<int>> g, mt;
+vt<vt<pii>> p;
+vt<vt<bool>> vis;
+
+int dr[4]={1, -1, 0, 0}, dc[4]={0, 0, 1, -1};
 
 struct dsu {
-	vt<int> e;
-	void init(int n) { e=vt<int>(n, -1); }
+	vt<int> e, r;
+	vt<list<int>> v;
+	dsu(int n) : e(vt<int>(n, -1)), r(vt<int>(n)), v(vt<list<int>>(n)) {}
 	int get(int x) { return e[x]<0 ? x : e[x]=get(e[x]); }
-	int size(int x) { return e[x]<0 ? -1*e[x] : size(e[x]); }
-	bool unite(int x, int y) {
+	int size(int x) { return e[x]<0 ? -e[x] : size(e[x]); }
+	bool unite(int x, int y, int c) {
 		x=get(x), y=get(y);
 		if (x==y) return false;
 		if (e[x]>e[y]) swap(x, y);
+		if (r[x]==r[y]) {
+			v[x].splice(v[x].end(), v[y]);
+		} else if (r[x]<r[y]) {
+			EACH(p, v[x]) mt[p/m][p%m]=c;
+			v[x]=move(v[y]);
+		} else {
+			EACH(p, v[y]) mt[p/m][p%m]=c;
+		}
+		r[x]=max(r[x], r[y]);
 		e[x]+=e[y];
 		e[y]=x;
-		s=max(s, -1*e[x]);
 		return true;
 	}
 };
@@ -161,12 +177,28 @@ struct dsu {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, a, b; read(n, m);
-	dsu d; d.init(n);
-	int cnt=n;
-	FOR(m) {
-		read(a, b); a--, b--;
-		cnt-=d.unite(a, b);
-		print(cnt, s);
+	read(n, m);
+	g.assign(n, vt<int>(m)), mt.assign(n, vt<int>(m, 0)), vis.assign(n, vt<bool>(m, 0));
+	p.resize(1e6+1);
+	int x;
+	FOR(n) {
+		FOR(j, m) {
+			read(x);
+			g[i][j]=x; p[x].pb({i, j});
+		}
 	}
+	dsu d(n*m);
+	FOR(i, 1e6, -1, -1) {
+		for (auto [pr, pc] : p[i]) {
+			d.r[pr*m+pc]=i;
+			d.v[pr*m+pc].pb(pr*m+pc);
+			FOR(k, 4) {
+				int r=pr+dr[k], c=pc+dc[k];
+				if (r>=0 && r<n && c>=0 && c<m && vis[r][c]) d.unite(pr*m+pc, r*m+c, i);
+			}
+			vis[pr][pc]=1;
+		}
+	}
+	FOR(n) FOR(j, m) mt[i][j]=g[i][j]-mt[i][j];
+	EACH(a, mt) print(a);
 }
