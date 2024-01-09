@@ -140,26 +140,50 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define mod 1000000007
+vt<vt<int>> adj;
+vt<int> vis, ans;
+int st;
+bool c;
+
+bool dfs(int v) {
+	if (c) return false;
+	if (vis[v]==2) {
+		return false;
+	} else if (vis[v]==1) {
+		st=v;
+		c=1;
+		ans.pb(v+1);
+		return true;
+	} else {
+		vis[v]=1;
+		EACH(u, adj[v]) {
+			if (dfs(u)) {
+				ans.pb(v+1);
+				return v!=st;
+			}
+		}
+	}
+	vis[v]=2;
+	return false;
+}
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n; read(n);
-	vt<int> dp(1<<n, 0);
-	vt<vt<int>> s(n);
-	FOR((1<<n)-1) s[__builtin_popcount(i)].pb(i);
-	dp[0]=1;
-	bool b;
-	FOR(n) {
-		FOR(j, n) {
-			read(b);
-			if (b) {
-				EACH(k, s[i]) {
-					dp[k^(1<<j)]=(dp[k^(1<<j)]+dp[k])%mod;
-				}
-			}
-		}
+	int n, m, x, y; read(n, m);
+	adj.resize(n), vis.assign(n, 0);
+	FOR(m) {
+		read(x, y); --x, --y;
+		adj[x].pb(y);
 	}
-	print(dp[(1<<n)-1]);
+	FOR(n) {
+		if (!vis[i]) dfs(i);
+	}
+	if (sz(ans)) {
+		print(sz(ans));
+		reverse(all(ans));
+		print(ans);
+	} else {
+		print("IMPOSSIBLE");
+	}
 }
