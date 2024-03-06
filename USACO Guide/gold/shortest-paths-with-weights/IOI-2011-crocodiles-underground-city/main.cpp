@@ -142,8 +142,81 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+int travel_plan(int n, int m, int R[][2], int L[], int k, int P[]) {
+	vt<vt<pii>> adj(n);
+	vt<pll> par(n, {LLONG_MAX, LLONG_MAX});
+	FOR(m) {
+		adj[R[i][0]].pb({R[i][1], L[i]});
+		adj[R[i][1]].pb({R[i][0], L[i]});
+	}
+	priority_queue<pll, vt<pll>, greater<pll>> pq;
+	FOR(k) {
+		par[P[i]]={0, 0};
+		pq.push({0, P[i]});
+	}
+	vt<bool> vis(n, 0);
+	while (sz(pq)) {
+		auto [w, v]=pq.top(); pq.pop();
+		if (vis[v]) continue;
+		vis[v]=1;
+		for (auto [u, c] : adj[v]) {
+			if (w+c<par[u].s) {
+				par[u].s=w+c;
+				if (par[u].s<par[u].f) swap(par[u].f, par[u].s);
+				if (par[u].s!=LLONG_MAX) pq.push({par[u].s, u}); 
+			}
+		}
+	}
+	return (int)par[0].s;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	
+	int n, m, k, x, y, z; read(n, m, k);	
+	vt<vt<pii>> adj(n);
+	vt<pll> par(n, {LLONG_MAX, LLONG_MAX});
+	FOR(m) {
+		read(x, y, z);
+		adj[x].pb({y, z});
+		adj[y].pb({x, z});
+	}
+	priority_queue<pll, vt<pll>, greater<pll>> pq;
+	FOR(k) {
+		read(x);
+		par[x]={0, 0};
+		pq.push({0, x});
+	}
+	vt<bool> vis(n, 0);
+	while (sz(pq)) {
+		auto [w, v]=pq.top(); pq.pop();
+		if (vis[v]) continue;
+		vis[v]=1;
+		for (auto [u, c] : adj[v]) {
+			if (w+c<par[u].s) {
+				par[u].s=w+c;
+				if (par[u].s<par[u].f) swap(par[u].f, par[u].s);
+				if (par[u].s!=LLONG_MAX) pq.push({par[u].s, u}); 
+			}
+		}
+	}
+	print(par[0].s);
 }
+/*
+5 4 3 
+0 1 2
+0 2 3
+3 2 1
+2 4 4
+1 3 4
+
+5 7 2
+0 2 4
+0 3 3
+3 2 2
+2 1 10
+0 1 100
+0 4 7
+3 4 9
+1 3
+*/

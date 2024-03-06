@@ -142,9 +142,50 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+struct dsu {
+	vt<int> e, cnt;
+	vt<bool> c;
+	dsu(int n) : e(vt<int>(n, -1)), cnt(vt<int>(n, 0)), c(vt<bool>(n, 0)) {}
+	int get(int x) { return e[x]<0 ? x : e[x]=get(e[x]); }
+	int size(int x) { return e[x]<0 ? -e[x] : size(e[x]); }
+	bool cycle(int x) { return e[x]<0 ? c[x] : cycle(e[x]); }
+	void inc(int x, int delta) { cnt[get(x)]+=delta; }
+	bool unite(int x, int y) {
+		x=get(x), y=get(y);
+		if (x==y) {
+			c[x]=1;
+			return false;
+		}
+		if (e[x]>e[y]) swap(x, y);
+		e[x]+=e[y];
+		e[y]=x;
+		return true;
+	}
+};
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
 	int n, a, b; read(n, a, b);
 	vt<int> v(n), ans(n); read(v);
+	unordered_map<int, int> mp;
+	dsu d(n), d2(n);
+	FOR(n) mp[v[i]]=i;
+	FOR(n) {
+		if (mp.count(a-v[i]) && v[i]<=a/2) d.unite(i, mp[a-v[i]]);
+		if (mp.count(b-v[i]) && v[i]<=b/2) d.unite(i, mp[b-v[i]]);
+	}
+	FOR(n) {
+		if (d.size(i)%2 && !d.cycle(i)) {
+			print("NO");
+			return 0;
+		}
+	}
+	FOR(n) {
+		if (v[i]*2==b) d.inc(i, -d2.e[i]);
+		else if (mp.count(b-v[i]) && v[i]<=b/2) d2.unite(i, mp[b-v[i]]);
+	}
+	FOR(n) if (d2.e[i]<-1) d.inc(i, -d2.e[i]);
+	print("YES");
+	FOR(n) write(d.size(i)==d.cnt[d.get(i)] ? 1 : 0), write(" ");
 }

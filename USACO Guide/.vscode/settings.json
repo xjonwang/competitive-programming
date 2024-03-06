@@ -26,7 +26,12 @@
         "initializer_list": "cpp",
         "ranges": "cpp",
         "regex": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "vector": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
