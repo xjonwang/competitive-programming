@@ -4,6 +4,7 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
+#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -29,6 +30,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
+
+#define MOD ((int)1e9+7)
 
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
@@ -142,45 +145,66 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int n, m;
-vt<vt<int>> adj;
-vt<ll> dp, par, ans;
+mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count()); 
 
-void dfs(int v, int p=-1) {
-	int k=sz(adj[v])-(p!=-1);
-	dp[v]=1;
-	FOR(k) {
-		if (adj[v][i]==p) swap(adj[v][i], adj[v].back());
-		dfs(adj[v][i], v);
-		dp[v]*=dp[adj[v][i]]+1; dp[v]%=m;
-	}
-}
+using H = ar<int,2>; // bases not too close to ends 
+H makeH(char c) { return {c,c}; }
+uniform_int_distribution<int> BDIST(0.1*MOD,0.9*MOD);
+const H base{BDIST(rng),BDIST(rng)};
+H operator+(H l, H r) { 
+	FOR(2) if ((l[i] += r[i]) >= MOD) l[i] -= MOD;
+	return l; }
+H operator-(H l, H r) { 
+	FOR(2) if ((l[i] -= r[i]) < 0) l[i] += MOD;
+	return l; }
+H operator*(H l, H r) { 
+	FOR(2) l[i] = (ll)l[i]*r[i]%MOD;
+	return l; }
 
-void dfs2(int v, int p=-1) {
-	ans[v]=dp[v]*(p!=-1 ? par[p] : 1)%m;
-	int k=sz(adj[v])-(p!=-1);
-	vt<ll> pre(k+1), post(k+1);
-	pre[0]=post[k]=1;
-	FOR(k) pre[i+1]=pre[i]*(dp[adj[v][i]]+1)%m;
-	FOR(i, k-1, -1, -1) post[i]=post[i+1]*(dp[adj[v][i]]+1)%m;
-	FOR(k) {
-		par[v]=(pre[i]*post[i+1]%m*(p!=-1 ? par[p] : 1)%m + 1)%m;
-		dfs2(adj[v][i], v);
-	}
-}
+vt<H> pows{{1,1}};
+
+struct HashRange {
+	str S; vt<H> cum{{}};
+	void add(char c) { S += c; cum.pb(base*cum.back()+makeH(c)); }
+	void add(str s) { EACH(c,s) add(c); }
+	void extend(int len) { while (sz(pows) <= len) 
+		pows.pb(base*pows.back()); }
+	H hash(int l, int r) { int len = r+1-l; extend(len);
+		return cum[r+1]-pows[len]*cum[l]; }
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	read(n, m);
-	adj.resize(n), dp.resize(n), par.resize(n), ans.resize(n);
-	int x, y;
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	freopen("censor.in", "r", stdin);
+	freopen("censor.out", "w", stdout);
+	str a, b; read(a, b);
+	int n=sz(a), m=sz(b);
+	set<int> p; FOR(n) p.insert(i);
+	HashRange hra, hrb; hra.add(a), hrb.add(b);
+	set<int> t; FOR(n-m+1) if (hra.hash(i, i+m-1)==hrb.hash(0, m-1)) t.insert(i);
+	int la=0;
+	while (1) {
+		auto l=p.lower_bound(la);
+		for (int i=0; i<m-1 && l!=p.begin(); i++) l--;
+		HashRange hr;
+		auto r=l;
+		for (int i=0; i<m-1 && r!=p.end(); i++) hr.add(a[*r++]);
+		for (int i=0; i<m-1 && r!=p.end(); i++) {
+			hr.add(a[*r++]);
+			if (hr.hash(i, i+m-1)==hrb.hash(0, m-1)) {
+				t.insert(*l);
+				break;
+			}
+			l++;
+		}
+		while (sz(t) && p.find(*t.begin())==p.end()) t.erase(t.begin());
+		if (sz(t)==0) break;
+		auto it=p.find(*t.begin());
+		la=*it;
+		FOR(m) it=p.erase(it);
 	}
-	dfs(0);
-	dfs2(0);
-	EACH(a, ans) print(a);
+	string ans;
+	EACH(i, p) ans.pb(a[i]);
+	print(ans);
 }

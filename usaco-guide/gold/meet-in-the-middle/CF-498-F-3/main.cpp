@@ -142,45 +142,45 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int n, m;
-vt<vt<int>> adj;
-vt<ll> dp, par, ans;
+int n;
+vt<ar<int, 3>> v;
+vt<string> mp={"MW", "LW", "LM"};
 
-void dfs(int v, int p=-1) {
-	int k=sz(adj[v])-(p!=-1);
-	dp[v]=1;
-	FOR(k) {
-		if (adj[v][i]==p) swap(adj[v][i], adj[v].back());
-		dfs(adj[v][i], v);
-		dp[v]*=dp[adj[v][i]]+1; dp[v]%=m;
+void construct(int idx, int end, ar<int, 3> val, vt<int>& seq, vt<pair<ar<int, 3>, vt<int>>>& cnt) {
+	if (idx==end) {
+		cnt.pb({{val[1]-val[0], val[2]-val[0], val[0]}, seq});
+		return;
 	}
-}
-
-void dfs2(int v, int p=-1) {
-	ans[v]=dp[v]*(p!=-1 ? par[p] : 1)%m;
-	int k=sz(adj[v])-(p!=-1);
-	vt<ll> pre(k+1), post(k+1);
-	pre[0]=post[k]=1;
-	FOR(k) pre[i+1]=pre[i]*(dp[adj[v][i]]+1)%m;
-	FOR(i, k-1, -1, -1) post[i]=post[i+1]*(dp[adj[v][i]]+1)%m;
-	FOR(k) {
-		par[v]=(pre[i]*post[i+1]%m*(p!=-1 ? par[p] : 1)%m + 1)%m;
-		dfs2(adj[v][i], v);
+	FOR(3) {
+		val[i]+=v[idx][i];
+		seq.pb(i);
+		construct(idx+1, end, val, seq, cnt);
+		seq.pop_back();
+		val[i]-=v[idx][i];
 	}
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	read(n, m);
-	adj.resize(n), dp.resize(n), par.resize(n), ans.resize(n);
-	int x, y;
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	read(n);
+	v.resize(n); read(v);
+	ar<int, 3> sum={0,0,0};
+	FOR(n) FOR(j, 3) sum[j]+=v[i][j];
+	vt<pair<ar<int, 3>, vt<int>>> v1, v2;
+	vt<int> t;
+	construct(0, n/2, {0, 0, 0}, t, v1);
+	construct(n/2, n, {0, 0, 0}, t, v2);
+	sort(all(v2));
+	int m=INT_MAX;
+	vt<int> ans(n);
+	EACH(x, v1) {
+		auto it=lower_bound(all(v2), make_pair(ar<int, 3>({-x.f[0]+sum[1]-sum[0], -x.f[1]+sum[2]-sum[0], INT_MIN}), vt<int>()));
+		if (sum[0]==sum[1]-it->f[0]-x.f[0] && sum[0]==sum[2]-it->f[1]-x.f[1] && umin(m, x.f[2]+it->f[2])) {
+			FOR(n/2) ans[i]=x.s[i];
+			FOR(i, n-n/2) ans[n/2+i]=it->s[i];
+		}
 	}
-	dfs(0);
-	dfs2(0);
-	EACH(a, ans) print(a);
+	if (m==INT_MAX) print("Impossible");
+	else EACH(x, ans) print(mp[x]);
 }

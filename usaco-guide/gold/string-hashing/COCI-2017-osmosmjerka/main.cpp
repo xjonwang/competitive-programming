@@ -4,6 +4,7 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
+#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -29,6 +30,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
+
+#define MOD ((int)1e9+7)
 
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
@@ -142,45 +145,78 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int n, m;
-vt<vt<int>> adj;
-vt<ll> dp, par, ans;
+mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count()); 
 
-void dfs(int v, int p=-1) {
-	int k=sz(adj[v])-(p!=-1);
-	dp[v]=1;
-	FOR(k) {
-		if (adj[v][i]==p) swap(adj[v][i], adj[v].back());
-		dfs(adj[v][i], v);
-		dp[v]*=dp[adj[v][i]]+1; dp[v]%=m;
-	}
-}
+using H = ar<int,2>; // bases not too close to ends 
+H makeH(char c) { return {c,c}; }
+uniform_int_distribution<int> BDIST(0.1*MOD,0.9*MOD);
+const H base{BDIST(rng),BDIST(rng)};
+H operator+(H l, H r) { 
+	FOR(2) if ((l[i] += r[i]) >= MOD) l[i] -= MOD;
+	return l; }
+H operator-(H l, H r) { 
+	FOR(2) if ((l[i] -= r[i]) < 0) l[i] += MOD;
+	return l; }
+H operator*(H l, H r) { 
+	FOR(2) l[i] = (ll)l[i]*r[i]%MOD;
+	return l; }
 
-void dfs2(int v, int p=-1) {
-	ans[v]=dp[v]*(p!=-1 ? par[p] : 1)%m;
-	int k=sz(adj[v])-(p!=-1);
-	vt<ll> pre(k+1), post(k+1);
-	pre[0]=post[k]=1;
-	FOR(k) pre[i+1]=pre[i]*(dp[adj[v][i]]+1)%m;
-	FOR(i, k-1, -1, -1) post[i]=post[i+1]*(dp[adj[v][i]]+1)%m;
-	FOR(k) {
-		par[v]=(pre[i]*post[i+1]%m*(p!=-1 ? par[p] : 1)%m + 1)%m;
-		dfs2(adj[v][i], v);
-	}
-}
+vt<H> pows{{1,1}};
+
+struct HashRange {
+	str S; vt<H> cum{{}};
+	void add(char c) { S += c; cum.pb(base*cum.back()+makeH(c)); }
+	void add(str s) { EACH(c,s) add(c); }
+	void extend(int len) { while (sz(pows) <= len) 
+		pows.pb(base*pows.back()); }
+	H hash(int l, int r) { int len = r+1-l; extend(len);
+		return cum[r+1]-pows[len]*cum[l]; }
+};
+
+int dc[4]={1, 1, -1, -1}, dr[4]={1, -1, 1, -1};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	read(n, m);
-	adj.resize(n), dp.resize(n), par.resize(n), ans.resize(n);
-	int x, y;
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	ll n, m, k; read(n, m, k);
+	ll mi=min(n, m);
+	vt<string> v(n); read(v);
+	map<H, ll> cnt;
+	umin(k, n*m/gcd(n, m));
+	FOR(n) {
+		HashRange hr1;
+		FOR(j, k+m) hr1.add(v[i][j%m]);
+		FOR(j, m) cnt[hr1.hash(j, j+k-1)]++;
+		HashRange hr2;
+		FOR(j, k+m) hr2.add(v[i][m-1-j%m]);
+		FOR(j, m) cnt[hr2.hash(j, j+k-1)]++;
 	}
-	dfs(0);
-	dfs2(0);
-	EACH(a, ans) print(a);
+	FOR(m) {
+		HashRange hr1;
+		FOR(j, k+n) hr1.add(v[j%n][i]);
+		FOR(j, n) cnt[hr1.hash(j, j+k-1)]++;
+		HashRange hr2;
+		FOR(j, k+n) hr2.add(v[n-1-j%n][i]);
+		FOR(j, n) cnt[hr2.hash(j, j+k-1)]++;
+	}
+	if (m>=n) {
+		FOR(m) {
+			FOR(h, 4) {
+				HashRange hr;
+				FOR(j, k+mi) hr.add(v[((j*dr[h])%n+n)%n][((i+j*dc[h])%m+m)%m]);
+				FOR(j, mi) cnt[hr.hash(j, j+k-1)]++;
+			}
+		}
+	} else {
+		FOR(n) {
+			FOR(h, 4) {
+				HashRange hr;
+				FOR(j, k+mi) hr.add(v[((i+j*dr[h])%n+n)%n][((j*dc[h])%m+m)%m]);
+				FOR(j, mi) cnt[hr.hash(j, j+k-1)]++;
+			}
+		}
+	}
+	ll num=0, denom=m*m*n*n*64;
+	for (auto [k, v] : cnt) num+=v*v;
+	cout << num/gcd(num, denom) << "/" << denom/gcd(num, denom) << endl;
 }

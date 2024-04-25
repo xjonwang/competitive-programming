@@ -17,8 +17,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
-#define f first
-#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -142,45 +140,18 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int n, m;
-vt<vt<int>> adj;
-vt<ll> dp, par, ans;
-
-void dfs(int v, int p=-1) {
-	int k=sz(adj[v])-(p!=-1);
-	dp[v]=1;
-	FOR(k) {
-		if (adj[v][i]==p) swap(adj[v][i], adj[v].back());
-		dfs(adj[v][i], v);
-		dp[v]*=dp[adj[v][i]]+1; dp[v]%=m;
-	}
-}
-
-void dfs2(int v, int p=-1) {
-	ans[v]=dp[v]*(p!=-1 ? par[p] : 1)%m;
-	int k=sz(adj[v])-(p!=-1);
-	vt<ll> pre(k+1), post(k+1);
-	pre[0]=post[k]=1;
-	FOR(k) pre[i+1]=pre[i]*(dp[adj[v][i]]+1)%m;
-	FOR(i, k-1, -1, -1) post[i]=post[i+1]*(dp[adj[v][i]]+1)%m;
-	FOR(k) {
-		par[v]=(pre[i]*post[i+1]%m*(p!=-1 ? par[p] : 1)%m + 1)%m;
-		dfs2(adj[v][i], v);
-	}
-}
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	read(n, m);
-	adj.resize(n), dp.resize(n), par.resize(n), ans.resize(n);
-	int x, y;
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	int n, c; read(n, c);
+	vt<int> v(n), cnt(n+1); read(v);
+	cnt[0]=0; FOR(n) cnt[i+1]=cnt[i]+(v[i]==c);
+	vt<vt<int>> t(5e5+1); FOR(n) t[v[i]].pb(i);
+	int ans=0;
+	FOR(5e5+1) {
+		if (i==c) continue;
+		int dp=0, l=0;
+		EACH(j, t[i]) dp=max(dp-(cnt[j]-cnt[l]), 0)+1, l=j, umax(ans, dp);
 	}
-	dfs(0);
-	dfs2(0);
-	EACH(a, ans) print(a);
+	print(ans+cnt[n]);
 }

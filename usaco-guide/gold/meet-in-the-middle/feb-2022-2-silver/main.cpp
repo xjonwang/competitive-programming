@@ -142,45 +142,28 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int n, m;
-vt<vt<int>> adj;
-vt<ll> dp, par, ans;
-
-void dfs(int v, int p=-1) {
-	int k=sz(adj[v])-(p!=-1);
-	dp[v]=1;
-	FOR(k) {
-		if (adj[v][i]==p) swap(adj[v][i], adj[v].back());
-		dfs(adj[v][i], v);
-		dp[v]*=dp[adj[v][i]]+1; dp[v]%=m;
-	}
-}
-
-void dfs2(int v, int p=-1) {
-	ans[v]=dp[v]*(p!=-1 ? par[p] : 1)%m;
-	int k=sz(adj[v])-(p!=-1);
-	vt<ll> pre(k+1), post(k+1);
-	pre[0]=post[k]=1;
-	FOR(k) pre[i+1]=pre[i]*(dp[adj[v][i]]+1)%m;
-	FOR(i, k-1, -1, -1) post[i]=post[i+1]*(dp[adj[v][i]]+1)%m;
-	FOR(k) {
-		par[v]=(pre[i]*post[i+1]%m*(p!=-1 ? par[p] : 1)%m + 1)%m;
-		dfs2(adj[v][i], v);
-	}
-}
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	read(n, m);
-	adj.resize(n), dp.resize(n), par.resize(n), ans.resize(n);
-	int x, y;
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y);
-		adj[y].pb(x);
+	int n, gx, gy; read(n, gx, gy);
+	vt<pii> v(n); read(v);
+	vt<vt<pll>> cnt1(n/2+1), cnt2(n-n/2+1);
+	FOR(1<<(n/2)) {
+		ll sx=0, sy=0;
+		FOR(j, n/2) if (i&(1<<j)) sx+=v[j].f, sy+=v[j].s;
+		cnt1[__builtin_popcount(i)].pb({sx, sy});
 	}
-	dfs(0);
-	dfs2(0);
-	EACH(a, ans) print(a);
+	FOR(1<<(n-n/2)) {
+		ll sx=0, sy=0;
+		FOR(j, n-n/2) if (i&(1<<j)) sx+=v[j+n/2].f, sy+=v[j+n/2].s;
+		cnt2[__builtin_popcount(i)].pb({sx, sy});
+	}
+	vt<ll> ans(n+1, 0);
+	FOR(n-n/2+1) sort(all(cnt2[i]));
+	FOR(i, n/2+1) {
+		FOR(j, n-n/2+1) {
+			EACH(p, cnt1[i]) ans[i+j]+=upper_bound(all(cnt2[j]), make_pair(gx-p.f, gy-p.s))-lower_bound(all(cnt2[j]), make_pair(gx-p.f, gy-p.s));
+		}
+	}
+	FOR(i, 1, n+1) print(ans[i]);
 }
