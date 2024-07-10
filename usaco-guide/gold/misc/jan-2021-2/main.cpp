@@ -142,31 +142,30 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define MOD 1000000009
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("team.in", "r", stdin);
-	freopen("team.out", "w", stdout);
-	int n, m, k; read(n, m, k);
-	vt<int> fj(n), fp(m); read(fj, fp);
-	sort(all(fj)), sort(all(fp));
-	vt<vt<int>> tpre(n+1, vt<int>(m+1)), dp, pre; 
-	tpre[0].assign(m+1, 0);
-	FOR(i, 1, n+1) iota(all(tpre[i]), 1);
+	int n, k; read(n, k);
+	vt<int> g(n); read(g);
+	vt<vt<bool>> p(k, vt<bool>(k));
+	string x;
 	FOR(k) {
-		pre=vt<vt<int>>(n+1, vt<int>(m+1, 0));
-		dp=vt<vt<int>>(m+1, vt<int>(n+1, 0));
-		FOR(i, 1, m+1) {
-			FOR(j, 1, n+1) {
-				int idx=lower_bound(fp.begin(), fp.begin()+i, fj[j-1])-fp.begin()-1;
-				if (idx<0) continue;
-				dp[i][j]=(dp[i][j-1]+tpre[j-1][idx])%MOD;	
-				pre[j][i]=(pre[j][i-1]+dp[i][j])%MOD;
-			}
-		}
-		tpre=pre;
+		read(x);
+		FOR(j, k) p[i][j]=x[j]-'0';
 	}
-	print(dp[m][n]);
+	vt<vt<int>> adj(k);
+	FOR(n) adj[--g[i]].pb(i);
+	priority_queue<pii, vt<pii>, greater<pii>> pq;
+	vt<int> d(n, INT_MAX); d[0]=0; pq.push({0, 0});
+	while (sz(pq)) {
+		auto [w, v]=pq.top(); pq.pop();
+		if (w>d[v]) continue;
+		if (p[g[v]][g[n-1]] && umin(d[n-1], w+n-1-v)) pq.push({d[n-1], n-1});
+		FOR(k) if (p[g[v]][i]) {
+			auto it=upper_bound(all(adj[i]), v);
+			if (it!=adj[i].end() && umin(d[*it], w+*it-v)) pq.push({d[*it], *it});
+			if (g[v]!=i && it!=adj[i].begin() && umin(d[*prev(it)], w+v-*prev(it))) pq.push({d[*prev(it)], *prev(it)});
+		} 
+	}
+	print(d[n-1]==INT_MAX ? -1 : d[n-1]);
 }

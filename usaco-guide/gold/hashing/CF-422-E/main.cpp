@@ -1,26 +1,26 @@
 #include <bits/stdc++.h>
 using namespace std;
- 
+
 #define ll long long
 #define ld long double
 #define ar array
- 
+#define str string
+
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
 using namespace __gnu_pbds;
- 
+
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
- 
+
 #define vt vector
 #define pb push_back
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
-#define pld pair<ld, ld>
 #define f first
 #define s second
- 
+
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
 #define F_OR2(i, e) F_OR(i, 0, e, 1)
@@ -30,14 +30,16 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
- 
+
+#define MOD ((int)1e9+7)
+
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
 }
 template<class T> bool umax(T& a, const T& b) { 
 	return a<b?a=b, 1:0;
 } 
- 
+
 ll FIRSTTRUE(function<bool(ll)> f, ll lb, ll rb) {
 	while(lb<rb) {
 		ll mb=(lb+rb)/2;
@@ -52,7 +54,7 @@ ll LASTTRUE(function<bool(ll)> f, ll lb, ll rb) {
 	} 
 	return lb;
 }
- 
+
 template<class A> void read(vt<A>& v);
 template<class A, size_t S> void read(ar<A, S>& a);
 template<class A, class B> void read(pair<A, B>& x);
@@ -84,8 +86,8 @@ template<class A, size_t S> void read(array<A, S>& x) {
 template<class A, class B> void read(pair<A, B>& x) {
 	cin >> x.first >> x.second;
 }
- 
- 
+
+
 string to_string(char c) {
 	return string(1, c);
 }
@@ -104,7 +106,7 @@ string to_string(vt<bool> v) {
 		res+=char('0'+v[i]);
 	return res;
 }
- 
+
 template<size_t S> string to_string(bitset<S> b) {
 	string res;
 	FOR(S)
@@ -125,7 +127,7 @@ template<class T> string to_string(T v) {
 template<class A, class B> string to_string(pair<A, B>& x) {
 	return to_string(x.first) + ' ' + to_string(x.second);
 }
- 
+
 template<class A> void write(A x) {
 	cout << to_string(x);
 }
@@ -143,42 +145,63 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-priority_queue<int> l;
-priority_queue<int, vt<int>, greater<int>> r;
-ll lsum, rsum;
-void insert(int x) {
-	int m=sz(l) ? l.top() : INT_MAX;
-	if (x<=m) l.push(x), lsum+=x;
-	else r.push(x), rsum+=x;
-	if (sz(r)+1<sz(l)) r.push(l.top()), rsum+=l.top(), lsum-=l.top(), l.pop();
-	if (sz(l)<sz(r)) l.push(r.top()), lsum+=r.top(), rsum-=r.top(), r.pop();
+mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count()); 
+
+using H = ar<int,2>; // bases not too close to ends 
+H makeH(char c) { return {c,c}; }
+uniform_int_distribution<int> BDIST(0.1*MOD,0.9*MOD);
+const H base{BDIST(rng),BDIST(rng)};
+H operator+(H l, H r) { 
+	FOR(2) if ((l[i] += r[i]) >= MOD) l[i] -= MOD;
+	return l; }
+H operator-(H l, H r) { 
+	FOR(2) if ((l[i] -= r[i]) < 0) l[i] += MOD;
+	return l; }
+H operator*(H l, H r) { 
+	FOR(2) l[i] = (ll)l[i]*r[i]%MOD;
+	return l; }
+
+vt<H> pows{{1,1}};
+
+struct HashRange {
+	str S; vt<H> cum{{}};
+	void add(char c) { S += c; cum.pb(base*cum.back()+makeH(c)); }
+	void add(str s) { EACH(c,s) add(c); }
+	void extend(int len) { while (sz(pows) <= len) 
+		pows.pb(base*pows.back()); }
+	H hash(int l, int r) { int len = r+1-l; extend(len);
+		return cum[r+1]-pows[len]*cum[l]; }
+};
+
+int n, m, k;
+HashRange a, b;
+
+int extend(int aidx, int bidx) {
+	int l=-1, r=min(n-aidx-1, m-bidx-1);
+	auto check=[&](int x) { return a.hash(aidx, aidx+x)==b.hash(bidx, bidx+x); };
+	return LASTTRUE(check, l, r)+1;
 }
- 
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int k, n; read(k, n);
-	char a, b; int c, d;
-	ll ss=0, ans;
-	vt<pii> v;
+	string s1, s2; read(n, s1, m, s2, k);
+	vt<vt<int>> dp(n+1, vt<int>(k+1, 0));
+	a.add(s1), b.add(s2);
 	FOR(n) {
-		read(a, c, b, d);
-		if (a==b) {
-			ss+=abs(d-c);
-		} else {
-			v.pb({c, d});
+		FOR(j, k) {
+			if (i) umax(dp[i][j], dp[i-1][j]);
+			int e=extend(i, dp[i][j]);
+			umax(dp[i+e][j+1], dp[i][j]+e);
+		}
+		if (i) umax(dp[i][k], dp[i-1][k]);
+	}
+	FOR(k+1) {
+		umax(dp[n][i], dp[n-1][i]);
+		if (dp[n][i]==m) {
+			print("YES");
+			return 0;
 		} 
 	}
-	n=sz(v);
-	sort(all(v), [](const pii& a, const pii& b) { return a.f+a.s<b.f+b.s; });
-	vt<ll> pre(n+1); pre[0]=0;
-	FOR(i, 1, n+1) insert(v[i-1].f), insert(v[i-1].s), pre[i]=rsum-lsum;
-	ans=pre[n];
-	if (k==2) {
-		lsum=rsum=0;
-		while (sz(l)) l.pop();
-		while(sz(r)) r.pop();
-		FOR(i, n-1, -1, -1) insert(v[i].f), insert(v[i].s), umin(ans, pre[i]+rsum-lsum);
-	}
-	print(ans+ss+n);
+	print("NO");
 }

@@ -146,7 +146,7 @@ struct FT {
 	vt<ll> v;
 	FT(int n) : v(n) {}
 	void update(int pos, ll dif) {
-		for (; pos < sz(v); pos |= pos + 1)v[pos] += dif;
+		for (; pos < sz(v); pos |= pos + 1) v[pos] += dif;
 	}
 	ll query(int pos) {
 		ll res = 0;

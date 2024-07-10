@@ -143,58 +143,49 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 }
 
 int n, m, k;
+int e[4], p[531441], in[100000];
+vt<int> adj[100000];
 
-bool match(int a, int b) {
-	FOR(k) {
-		if (a%5 && a%5!=b%5) return false;
-		a/=5, b/=5;
-	}
-	return true;
+int ser(string x) {
+	int r=0;
+	FOR(k) r+=e[i]*(x[i]=='_' ? 26 : x[i]-'a');
+	return r;
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
+	e[0]=1; FOR(i, 1, 4) e[i]=e[i-1]*27;
 	read(n, m, k);
-	vt<vt<int>> p(625);
-	string t; int idx;
+	string x; int y;
 	FOR(n) {
-		read(t);
-		int a=0, e=1;
-		FOR(j, k-1, -1, -1) a+=t[j]=='_' ? 0 : e*(t[j]-'a'+1), e*=5;
-		p[a].pb(i+1);
+		read(x);
+		p[ser(x)]=i+1;
 	}
-	vt<vt<int>> ind(n);
 	FOR(m) {
-		read(t, idx); --idx;
-		int a=0, e=1;
-		FOR(j, k-1, -1, -1) a+=e*(t[j]-'a'+1), e*=5;
-		ind[idx].pb(a);
-	}
-	vt<vt<list<int>>> ma(n, vt<list<int>>(257));
-	FOR(625) ma[n-1][0].pb(i);
-	vt<bool> vis(256, 0);
-	FOR(i, n-1, -1, -1) {
-		FOR(j, 257) {
-			auto it=ma[i][j].begin();
-			while (it!=ma[i][j].end()) {
-				int cnt=0;
-				EACH(x, ind[i]) {
-					if (vis[x]) continue;
-					cnt+=match(*it, x);
-				}
-				if (cnt) {
-					ma[i][j+cnt].pb(*it);
-					it=ma[i][j].erase(it);
-				} else {
-					it++;
-				}
-			}
+		read(x, y); --y;
+		bool a=0;
+		FOR(b, 1<<k) {
+			string t=x;
+			FOR(j, k) if (b&(1<<j)) t[j]='_';
+			int d=ser(t);
+			if (p[d]==y+1) a=1;
+			else if (p[d]) adj[y].pb(p[d]-1);
 		}
-		EACH(x, ind[i]) vis[x]=1;
-		if (i) {
-			FOR(j, 257) EACH(x, ma[i][j]) ma[i-1][j].pb(x);
+		if (!a) {
+			print("NO");
+			return 0;
 		}
 	}
-	print("YES");
+	queue<int> q;
+	vt<int> ans;
+	FOR(v, n) EACH(u, adj[v]) in[u]++;
+	FOR(n) if (in[i]==0) q.push(i);
+	while (sz(q)) {
+		int v=q.front(); q.pop();
+		ans.pb(v+1);
+		EACH(u, adj[v]) if(--in[u]==0) q.push(u);
+	}
+	if (sz(ans)!=n) print("NO");
+	else print("YES"), print(ans);
 }

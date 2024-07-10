@@ -1,26 +1,25 @@
 #include <bits/stdc++.h>
 using namespace std;
- 
+
 #define ll long long
 #define ld long double
 #define ar array
- 
+
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
 using namespace __gnu_pbds;
- 
+
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
- 
+
 #define vt vector
 #define pb push_back
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
-#define pld pair<ld, ld>
 #define f first
 #define s second
- 
+
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
 #define F_OR2(i, e) F_OR(i, 0, e, 1)
@@ -30,14 +29,14 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
- 
+
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
 }
 template<class T> bool umax(T& a, const T& b) { 
 	return a<b?a=b, 1:0;
 } 
- 
+
 ll FIRSTTRUE(function<bool(ll)> f, ll lb, ll rb) {
 	while(lb<rb) {
 		ll mb=(lb+rb)/2;
@@ -52,7 +51,7 @@ ll LASTTRUE(function<bool(ll)> f, ll lb, ll rb) {
 	} 
 	return lb;
 }
- 
+
 template<class A> void read(vt<A>& v);
 template<class A, size_t S> void read(ar<A, S>& a);
 template<class A, class B> void read(pair<A, B>& x);
@@ -84,8 +83,8 @@ template<class A, size_t S> void read(array<A, S>& x) {
 template<class A, class B> void read(pair<A, B>& x) {
 	cin >> x.first >> x.second;
 }
- 
- 
+
+
 string to_string(char c) {
 	return string(1, c);
 }
@@ -104,7 +103,7 @@ string to_string(vt<bool> v) {
 		res+=char('0'+v[i]);
 	return res;
 }
- 
+
 template<size_t S> string to_string(bitset<S> b) {
 	string res;
 	FOR(S)
@@ -125,7 +124,7 @@ template<class T> string to_string(T v) {
 template<class A, class B> string to_string(pair<A, B>& x) {
 	return to_string(x.first) + ' ' + to_string(x.second);
 }
- 
+
 template<class A> void write(A x) {
 	cout << to_string(x);
 }
@@ -143,42 +142,60 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-priority_queue<int> l;
-priority_queue<int, vt<int>, greater<int>> r;
-ll lsum, rsum;
-void insert(int x) {
-	int m=sz(l) ? l.top() : INT_MAX;
-	if (x<=m) l.push(x), lsum+=x;
-	else r.push(x), rsum+=x;
-	if (sz(r)+1<sz(l)) r.push(l.top()), rsum+=l.top(), lsum-=l.top(), l.pop();
-	if (sz(l)<sz(r)) l.push(r.top()), lsum+=r.top(), rsum-=r.top(), r.pop();
+int n, m, cc;
+int dr[4]={1, -1, 0, 0}, dc[4]={0, 0, 1, -1}, idx[50][50], adj[15][15];
+bool vis[50][50];
+vt<vt<char>> v;
+
+struct node {
+	int r, c, d;
+};
+
+void flood1(int r, int c) {
+	if (r<0 || r>=n || c<0 || c>=m || v[r][c]!='X' || vis[r][c]) return;
+	vis[r][c]=1, idx[r][c]=cc;
+	FOR(4) flood1(r+dr[i], c+dc[i]);
 }
- 
+
+void flood2(int x) {
+	deque<node> q;
+	vt<vt<bool>> vis(n, vt<bool>(m, 0));
+	FOR(n) FOR(j, m) if (idx[i][j]==x) q.push_back({i, j, 0});
+	while (sz(q)) {
+		auto [r, c, d]=q.front(); q.pop_front();
+		if (r<0 || r>=n || c<0 || c>=m || v[r][c]=='.' || vis[r][c]) continue;
+		vis[r][c]=1;
+		if (idx[r][c]>=0) umin(adj[x][idx[r][c]], d);
+		if (v[r][c]=='S') FOR(4) q.push_back({r+dr[i], c+dc[i], d+1});
+		else FOR(4) q.push_front({r+dr[i], c+dc[i], d});
+	}
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int k, n; read(k, n);
-	char a, b; int c, d;
-	ll ss=0, ans;
-	vt<pii> v;
-	FOR(n) {
-		read(a, c, b, d);
-		if (a==b) {
-			ss+=abs(d-c);
-		} else {
-			v.pb({c, d});
-		} 
+	freopen("island.in", "r", stdin);
+	freopen("island.out", "w", stdout);
+	read(n, m);
+	v.assign(n, vt<char>(m)); read(v);
+	FOR(n) FOR(j, m) idx[i][j]=-1;
+	FOR(n) FOR(j, m) if (v[i][j]=='X' && !vis[i][j]) flood1(i, j), cc++;
+	FOR(cc) FOR(j, cc) adj[i][j]=INT_MAX;
+	FOR(cc) flood2(i);
+	vt<vt<int>> dp(1<<cc, vt<int>(cc, INT_MAX));
+	FOR(cc) dp[0][i]=0, dp[1<<i][i]=0;
+	FOR(i, 1, 1<<cc) {
+		FOR(j, cc) {
+			if (i&(1<<j)) {
+				if (__builtin_popcount(i^(1<<j))==0) continue;
+				FOR(k, cc) {
+					if (k==j) continue;
+					if (i&(1<<k)) umin(dp[i][j], dp[i^(1<<j)][k]+adj[k][j]);
+				}
+			}
+		}
 	}
-	n=sz(v);
-	sort(all(v), [](const pii& a, const pii& b) { return a.f+a.s<b.f+b.s; });
-	vt<ll> pre(n+1); pre[0]=0;
-	FOR(i, 1, n+1) insert(v[i-1].f), insert(v[i-1].s), pre[i]=rsum-lsum;
-	ans=pre[n];
-	if (k==2) {
-		lsum=rsum=0;
-		while (sz(l)) l.pop();
-		while(sz(r)) r.pop();
-		FOR(i, n-1, -1, -1) insert(v[i].f), insert(v[i].s), umin(ans, pre[i]+rsum-lsum);
-	}
-	print(ans+ss+n);
+	int ans=INT_MAX;
+	FOR(cc) umin(ans, dp[(1<<cc)-1][i]);
+	print(ans);
 }
