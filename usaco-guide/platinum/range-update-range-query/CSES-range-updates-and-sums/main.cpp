@@ -4,7 +4,6 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
-#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -30,8 +29,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
-
-#define MOD ((int)1e9+7)
 
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
@@ -145,37 +142,92 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count()); 
-uniform_int_distribution<ll> randint(1, 1e18);
-
-
-ll xo(ll x, ll y) {
-	ll e=1, r=0;
-	while (x|y) {
-		r+=(x%3+y%3)%3*e;
-		e*=3, x/=3, y/=3;
+struct ST {
+	int n, h; vt<ll> v, d1, d2;
+	ST(vt<int>& a) : n(1) {
+		while (n<sz(a)) n*=2;
+		h=32-__builtin_clz(n);
+		v.assign(2*n, 0);
+		d1.assign(n, 0), d2.assign(n, 0);
+		FOR(sz(a)) v[n+i]=a[i];
+		FOR(i, n-1, 0, -1) v[i]=v[i<<1]+v[i<<1|1];
 	}
-	return r;
-}
+	int size(int i) {
+		return 1<<(h-(32-__builtin_clz(i)));
+	}
+	ll calc(int i) {
+		if (i>=n) return v[i];
+		return (d2[i] ? d2[i]*size(i) : v[i<<1]+v[i<<1|1])+d1[i]*size(i);
+	}
+	void apply_delta(int i, ll d) {
+		v[i]+=d*size(i);
+		if (i<n) d1[i]+=d;
+	}
+	void apply_set(int i, ll x) {
+		v[i]=x*size(i);
+		if (i<n) d2[i]=x, d1[i]=0;
+	}
+	void push(int i) {
+		if (d2[i]) apply_set(i<<1, d2[i]), apply_set(i<<1|1, d2[i]);
+		if (d1[i]) apply_delta(i<<1, d1[i]), apply_delta(i<<1|1, d1[i]);
+		d1[i]=d2[i]=0;
+	}
+	void propagate(int i) {
+		for (int j=h; j>0; j--) push(i>>j);
+	}
+	void build(int i) {
+		while (i>1) i>>=1, v[i]=calc(i);
+	}
+	void modify(int l, int r, ll d) {
+		int l0=l+n, r0=r+n-1;
+		propagate(l0), propagate(r0);
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) apply_delta(l++, d);
+			if (r&1) apply_delta(--r, d);
+		}
+		build(l0), build(r0);
+	}
+	void set(int l, int r, ll x) {
+		int l0=l+n, r0=r+n-1;
+		propagate(l0), propagate(r0);
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) apply_set(l++, x);
+			if (r&1) apply_set(--r, x);
+		}
+		build(l0), build(r0);
+	}
+	ll query(int l, int r) {
+		ll ret=0;
+		propagate(l+n), propagate(r+n-1);
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) ret+=calc(l++);
+			if (r&1) ret+=calc(--r);
+		}
+		return ret;
+	}
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n; read(n);
-	vt<int> v(n); FOR(n) read(v[i]);
-	vt<ll> r(n), p(n+1); FOR(n) r[i]=randint(rng);
-	map<ll, int> cnt; cnt[0]=1, p[0]=0;
-	ll ans=0, x=0; int l=0;
-	vt<deque<int>> vis(n);
-	FOR(n) {
-		x=xo(x, r[--v[i]]);
-		ans+=cnt[x];
-		p[i+1]=x, cnt[x]++;
-		vis[v[i]].push_back(i);
-		if (sz(vis[v[i]])>3) {
-			int t=vis[v[i]].front(); vis[v[i]].pop_front();
-			while (l<=t) cnt[p[l++]]--;
+	int n, q, x, y, z; read(n, q);
+	vt<int> v(n); read(v);
+	ST st(v);
+	FOR(q) {
+		read(x);
+		switch (x) {
+			case 1:
+				read(x, y, z); --x;
+				st.modify(x, y, z);
+				break;
+			case 2:
+				read(x, y, z); --x;
+				st.set(x, y, z);
+				break;
+			case 3:
+				read(x, y); --x;
+				print(st.query(x, y));
+				break;
 		}
 	}
-	print(ans);
 }

@@ -4,7 +4,6 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
-#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -30,8 +29,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
-
-#define MOD ((int)1e9+7)
 
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
@@ -145,37 +142,52 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count()); 
-uniform_int_distribution<ll> randint(1, 1e18);
-
-
-ll xo(ll x, ll y) {
-	ll e=1, r=0;
-	while (x|y) {
-		r+=(x%3+y%3)%3*e;
-		e*=3, x/=3, y/=3;
+struct ST {
+	int n; vt<pii> v; vt<int> c;
+	ST(string a) : n(1) {
+		while (n<sz(a)) n*=2;
+		v.resize(2*n);
+		c.assign(2*n, 0);
+		FOR(sz(a)) v[n+i]=a[i]=='0' ? make_pair(0, 1) : make_pair(1, 0);
+		FOR(i, n-1, 0, -1) c[i]=c[i<<1]+c[i<<1|1], v[i]=combine(v[i<<1], v[i<<1|1], c[i]);
 	}
-	return r;
-}
+	pii combine(pii l, pii r, int& a) {
+		a+=2*min(l.s, r.f);
+		return {l.f+max(r.f-l.s, 0), r.s+max(l.s-r.f, 0)};
+	} 
+	void modify(int i) {
+		i+=n;
+		v[i]={(v[i].f+1)%2, (v[i].s+1)%2};
+		for (; i>1; i>>=1) c[i>>1]=c[i]+c[i^1], v[i>>1]=combine(v[i&-2], v[i|1], c[i>>1]);
+	}
+	int query(int l, int r) {
+		pii resl={0, 0}, resr={0, 0}; int ret=0;
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) ret+=c[l], resl=combine(resl, v[l++], ret);
+			if (r&1) ret+=c[--r], resr=combine(v[r], resr, ret);		
+		}
+		combine(resl, resr, ret);
+		return ret;
+	}
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n; read(n);
-	vt<int> v(n); FOR(n) read(v[i]);
-	vt<ll> r(n), p(n+1); FOR(n) r[i]=randint(rng);
-	map<ll, int> cnt; cnt[0]=1, p[0]=0;
-	ll ans=0, x=0; int l=0;
-	vt<deque<int>> vis(n);
+	string v; read(v);
+	ST st(v);
+	int n, x, y; read(n);
 	FOR(n) {
-		x=xo(x, r[--v[i]]);
-		ans+=cnt[x];
-		p[i+1]=x, cnt[x]++;
-		vis[v[i]].push_back(i);
-		if (sz(vis[v[i]])>3) {
-			int t=vis[v[i]].front(); vis[v[i]].pop_front();
-			while (l<=t) cnt[p[l++]]--;
+		read(x);
+		switch (x) {
+			case 1:
+				read(x);
+				st.modify(--x);
+				break;
+			case 2:
+				read(x, y); --x;
+				print(y-x-st.query(x, y));
+				break;
 		}
 	}
-	print(ans);
 }

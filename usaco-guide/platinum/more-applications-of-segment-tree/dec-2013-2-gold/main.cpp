@@ -4,7 +4,6 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
-#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -30,8 +29,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
-
-#define MOD ((int)1e9+7)
 
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
@@ -145,37 +142,37 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count()); 
-uniform_int_distribution<ll> randint(1, 1e18);
-
-
-ll xo(ll x, ll y) {
-	ll e=1, r=0;
-	while (x|y) {
-		r+=(x%3+y%3)%3*e;
-		e*=3, x/=3, y/=3;
+struct ST {
+	int n; vt<ll> v;
+	ST(vt<int>& a) : n(sz(a)), v(2*n, 0) {
+		FOR(n) v[n+i]=a[i];
 	}
-	return r;
-}
+	void modify(int l, int r, int x) {
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) v[l++]+=x;
+			if (r&1) v[--r]+=x;
+		}
+	}
+	ll query(int i) {
+		ll ret=0;
+		for (i+=n; i>0; i>>=1) ret+=v[i];
+		return ret;
+	}	
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n; read(n);
-	vt<int> v(n); FOR(n) read(v[i]);
-	vt<ll> r(n), p(n+1); FOR(n) r[i]=randint(rng);
-	map<ll, int> cnt; cnt[0]=1, p[0]=0;
-	ll ans=0, x=0; int l=0;
-	vt<deque<int>> vis(n);
-	FOR(n) {
-		x=xo(x, r[--v[i]]);
-		ans+=cnt[x];
-		p[i+1]=x, cnt[x]++;
-		vis[v[i]].push_back(i);
-		if (sz(vis[v[i]])>3) {
-			int t=vis[v[i]].front(); vis[v[i]].pop_front();
-			while (l<=t) cnt[p[l++]]--;
-		}
+	//freopen("marathon.in", "r", stdin);
+	//freopen("marathon.out", "w", stdout);
+	int n, d, x, y; read(n, d);
+	vt<int> v(n); read(v);
+	ST st(v);
+	FOR(d) {
+		read(x, y); --x;
+		ll p2=x>1 ? st.query(x-2) : 0, p1=x>0 ? st.query(x-1) : 0;
+		ll e=max(p2+y, p1)-st.query(x);
+		st.modify(x, x+1, e);
+		
 	}
-	print(ans);
 }

@@ -4,7 +4,6 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
-#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -30,8 +29,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
-
-#define MOD ((int)1e9+7)
 
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
@@ -145,37 +142,44 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count()); 
-uniform_int_distribution<ll> randint(1, 1e18);
-
-
-ll xo(ll x, ll y) {
-	ll e=1, r=0;
-	while (x|y) {
-		r+=(x%3+y%3)%3*e;
-		e*=3, x/=3, y/=3;
+struct ST {
+	int n; vt<int> ob, re, dpob, dpre;
+	ST(vt<pii>& a) : n(1) {
+		while (n<sz(a)) n*=2;
+		ob=re=dpob=dpre=vt<int>(2*n, 1e7);
+		FOR(sz(a)) ob[n+i]=dpob[n+i]=a[i].f, re[n+i]=dpre[n+i]=a[i].s;
+		FOR(i, n-1, 0, -1) merge(i);
 	}
-	return r;
-}
+	void merge(int i) {
+		ob[i]=ob[i<<1], re[i]=re[i<<1];
+		dpob[i]=dpre[i]=INT_MAX;
+		if (ob[i<<1|1]>=dpob[i<<1]) umin(dpob[i], dpob[i<<1|1]);
+		if (re[i<<1|1]>=dpob[i<<1]) umin(dpob[i], dpre[i<<1|1]);
+		if (ob[i<<1|1]>=dpre[i<<1]) umin(dpre[i], dpob[i<<1|1]);
+		if (re[i<<1|1]>=dpre[i<<1]) umin(dpre[i], dpre[i<<1|1]);
+	}
+	void modify(int i, int j) {
+		i+=n, j+=n;
+		swap(ob[i], ob[j]), swap(re[i], re[j]);
+		dpob[i]=ob[i], dpre[i]=re[i], dpob[j]=ob[j], dpre[j]=re[j];
+		for (; i>1; i>>=1) merge(i>>1);
+		for (; j>1; j>>=1) merge(j>>1); 
+	}
+	bool query() {
+		return min(dpob[1], dpre[1])<INT_MAX;
+	}
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n; read(n);
-	vt<int> v(n); FOR(n) read(v[i]);
-	vt<ll> r(n), p(n+1); FOR(n) r[i]=randint(rng);
-	map<ll, int> cnt; cnt[0]=1, p[0]=0;
-	ll ans=0, x=0; int l=0;
-	vt<deque<int>> vis(n);
-	FOR(n) {
-		x=xo(x, r[--v[i]]);
-		ans+=cnt[x];
-		p[i+1]=x, cnt[x]++;
-		vis[v[i]].push_back(i);
-		if (sz(vis[v[i]])>3) {
-			int t=vis[v[i]].front(); vis[v[i]].pop_front();
-			while (l<=t) cnt[p[l++]]--;
-		}
+	int n, q, x, y; read(n);
+	vt<pii> v(n); read(v);
+	ST st(v);
+	read(q);
+	FOR(q) {
+		read(x, y); --x, --y;
+		st.modify(x, y);
+		print(st.query() ? "TAK" : "NIE");
 	}
-	print(ans);
 }

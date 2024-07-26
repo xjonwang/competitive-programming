@@ -4,7 +4,6 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
-#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -30,8 +29,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
-
-#define MOD ((int)1e9+7)
 
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
@@ -145,37 +142,44 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count()); 
-uniform_int_distribution<ll> randint(1, 1e18);
-
-
-ll xo(ll x, ll y) {
-	ll e=1, r=0;
-	while (x|y) {
-		r+=(x%3+y%3)%3*e;
-		e*=3, x/=3, y/=3;
+struct FT {
+	int n; vt<ll> v;
+	FT(int a) : n(a), v(a, 0) {}
+	void modify(int i, ll d) {
+		for (; i<n; i|=i+1) v[i]+=d;
 	}
-	return r;
+	ll query(int i) {
+		ll ret=0;
+		for (; i>0; i&=i-1) ret+=v[i-1];
+		return ret;
+	}
+};
+
+void solve() {
+	int n, m; read(n, m);
+	FT ft1(n+1), ft2(n+1);
+	ll x, y, z;
+	FOR(m) {
+		read(x);
+		switch (x) {
+			case 0:
+				read(x, y, z); --x, --y;
+				ft1.modify(x, z);
+				ft1.modify(y+1, -z);
+				ft2.modify(x, (1-x)*z);
+				ft2.modify(y+1, y*z);
+				break;
+			case 1:
+				read(x, y); --x;
+				print((y-1)*ft1.query(y) - (x-1)*ft1.query(x) + ft2.query(y) - ft2.query(x));
+				break;
+		}
+	}
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n; read(n);
-	vt<int> v(n); FOR(n) read(v[i]);
-	vt<ll> r(n), p(n+1); FOR(n) r[i]=randint(rng);
-	map<ll, int> cnt; cnt[0]=1, p[0]=0;
-	ll ans=0, x=0; int l=0;
-	vt<deque<int>> vis(n);
-	FOR(n) {
-		x=xo(x, r[--v[i]]);
-		ans+=cnt[x];
-		p[i+1]=x, cnt[x]++;
-		vis[v[i]].push_back(i);
-		if (sz(vis[v[i]])>3) {
-			int t=vis[v[i]].front(); vis[v[i]].pop_front();
-			while (l<=t) cnt[p[l++]]--;
-		}
-	}
-	print(ans);
+	int t; read(t);
+	FOR(t) solve();
 }

@@ -4,7 +4,6 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
-#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -30,8 +29,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
-
-#define MOD ((int)1e9+7)
 
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
@@ -145,37 +142,55 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-mt19937 rng((uint32_t)chrono::steady_clock::now().time_since_epoch().count()); 
-uniform_int_distribution<ll> randint(1, 1e18);
-
-
-ll xo(ll x, ll y) {
-	ll e=1, r=0;
-	while (x|y) {
-		r+=(x%3+y%3)%3*e;
-		e*=3, x/=3, y/=3;
+struct ST {
+	int n; vt<int> seg, sum;
+	ST(vt<int>& a) : n(1) {
+		while (n<sz(a)) n*=2;
+		seg.resize(2*n), sum.resize(2*n);
+		FOR(sz(a)) seg[n+i]=sum[n+i]=a[i];
+		FOR(i, n-1, 0, -1) merge(i);
 	}
-	return r;
-}
+	void merge(int i) {
+		seg[i]=max(seg[i<<1|1], sum[i<<1|1]+seg[i<<1]);
+		sum[i]=sum[i<<1]+sum[i<<1|1];
+	}
+	void modify(int i, int x) {
+		i+=n; seg[i]+=x, sum[i]+=x;
+		for (; i>1; i>>=1) merge(i>>1);
+	}
+	int query() {
+		if (seg[1]<=0) return -1;
+		int i=1, x=0;
+		while (i<n) {
+			if (seg[i<<1|1]>x) i<<=1, i|=1;
+			else x-=sum[i<<1|1], i<<=1;
+		}
+		return i-n;
+	}
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n; read(n);
-	vt<int> v(n); FOR(n) read(v[i]);
-	vt<ll> r(n), p(n+1); FOR(n) r[i]=randint(rng);
-	map<ll, int> cnt; cnt[0]=1, p[0]=0;
-	ll ans=0, x=0; int l=0;
-	vt<deque<int>> vis(n);
-	FOR(n) {
-		x=xo(x, r[--v[i]]);
-		ans+=cnt[x];
-		p[i+1]=x, cnt[x]++;
-		vis[v[i]].push_back(i);
-		if (sz(vis[v[i]])>3) {
-			int t=vis[v[i]].front(); vis[v[i]].pop_front();
-			while (l<=t) cnt[p[l++]]--;
+	int n, m, q, x, y, z; read(n, m);
+	vt<int> a(n), b(m), cnt(1e6+1, 0);
+	read(a, b);
+	FOR(n) cnt[a[i]]++;
+	FOR(m) cnt[b[i]]--;
+	ST st(cnt);
+	read(q);
+	FOR(q) {
+		read(x, y, z); --y;
+		switch (x) {
+			case 1:
+				st.modify(a[y], -1);
+				st.modify(a[y]=z, 1);	
+				break;
+			case 2:
+				st.modify(b[y], 1);
+				st.modify(b[y]=z, -1);
+				break;
 		}
+		print(st.query());
 	}
-	print(ans);
 }
