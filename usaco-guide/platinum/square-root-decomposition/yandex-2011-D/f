@@ -1,0 +1,26 @@
+updated_bids = np.empty((self._capacity, 2), dtype=np.float64)
+        updated_bids_back = 0
+        old_idx = 0
+        delta_idx = 0
+        while (updated_bids_back < self._capacity and old_idx < self._bids_back and delta_idx < depth):
+            if (self._bids[old_idx][0] == bids[delta_idx][0]):
+                updated_bids[updated_bids_back] = bids[delta_idx]
+                old_idx += 1
+                delta_idx += 1
+            elif (self._bids[old_idx][0] < bids[delta_idx][0]):
+                updated_bids[updated_bids_back] = self._bids[old_idx]
+                old_idx += 1
+            elif (self._bids[old_idx][0] > bids[delta_idx][0]):
+                updated_bids[updated_bids_back] = bids[delta_idx]
+                delta_idx += 1
+            updated_bids_back += 1
+        while (updated_bids_back < self._capacity and old_idx < self._bids_back):
+            updated_bids[updated_bids_back] = self._bids[old_idx]
+            old_idx += 1
+            updated_bids_back += 1
+        while (updated_bids_back < self._capacity and delta_idx < depth):
+            updated_bids[updated_bids_back] = bids[delta_idx]
+            delta_idx += 1
+            updated_bids_back += 1
+        self._bids_back = updated_bids_back
+        self._bids = updated_bids

@@ -146,8 +146,7 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 
 struct ST {
 	int n, h; vt<ll> v; vt<pll> d;
-	ST(vt<int>& a) : n(1) {
-		while (n<sz(a)) n*=2;
+	ST(vt<int>& a) : n(sz(a)) {
 		h=32-__builtin_clz(n);
 		v.assign(2*n, 0);
 		d.assign(n, {1, 0});
@@ -189,8 +188,8 @@ struct ST {
 		ll ret=0;
 		propagate(l+n), propagate(r+n-1);
 		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
-			if (l&1) ret+=calc(l++);
-			if (r&1) ret+=calc(--r);
+			if (l&1) ret+=v[l++];
+			if (r&1) ret+=v[--r];
 		}
 		return ret%MOD;
 	}

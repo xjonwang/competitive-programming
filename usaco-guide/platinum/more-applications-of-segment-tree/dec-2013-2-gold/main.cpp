@@ -143,36 +143,41 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 }
 
 struct ST {
-	int n; vt<ll> v;
-	ST(vt<int>& a) : n(sz(a)), v(2*n, 0) {
-		FOR(n) v[n+i]=a[i];
+	int n; vt<pll> dp1, dp2;
+	ST(vt<int>& a) : n(1) {
+		while (n<sz(a)) n*=2;
+		dp1=dp2=vt<pll>(2*n, {0, 0});
+		FOR(sz(a)) dp1[n+i].s=a[i];
+		FOR(i, n-1, 0, -1) merge(i);
 	}
-	void modify(int l, int r, int x) {
-		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
-			if (l&1) v[l++]+=x;
-			if (r&1) v[--r]+=x;
-		}
+	void merge(int i) {
+		dp1[i].f=max(dp1[i<<1].f+dp1[i<<1|1].f, dp1[i<<1].s+dp2[i<<1|1].f);
+		dp1[i].s=max(dp1[i<<1].f+dp1[i<<1|1].s, dp1[i<<1].s+dp2[i<<1|1].s);
+		dp2[i].f=max(dp2[i<<1].f+dp1[i<<1|1].f, dp2[i<<1].s+dp2[i<<1|1].f);
+		dp2[i].s=max(dp2[i<<1].f+dp1[i<<1|1].s, dp2[i<<1].s+dp2[i<<1|1].s);
 	}
-	ll query(int i) {
-		ll ret=0;
-		for (i+=n; i>0; i>>=1) ret+=v[i];
-		return ret;
-	}	
+	void modify(int i, int x) {
+		dp1[i+=n].s=x;
+		while (i>1) merge(i>>=1);
+	}
+	ll query() {
+		return max(max(dp1[1].f, dp1[1].s), max(dp2[1].f, dp2[1].s));
+	}
 };
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	//freopen("marathon.in", "r", stdin);
-	//freopen("marathon.out", "w", stdout);
-	int n, d, x, y; read(n, d);
+	freopen("optmilk.in", "r", stdin);
+	freopen("optmilk.out", "w", stdout);
+	int n, m, x, y; read(n, m);
 	vt<int> v(n); read(v);
 	ST st(v);
-	FOR(d) {
+	ll ans=0;
+	FOR(m) {
 		read(x, y); --x;
-		ll p2=x>1 ? st.query(x-2) : 0, p1=x>0 ? st.query(x-1) : 0;
-		ll e=max(p2+y, p1)-st.query(x);
-		st.modify(x, x+1, e);
-		
+		st.modify(x, y);
+		ans+=st.query();	
 	}
+	print(ans);
 }
