@@ -142,13 +142,13 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-#define MOD 1000000007
 #define MX 6000001
 #define AL 2
 
-int tr[MX][AL], cnt[MX];
-bool stop[MX];
+int tr[MX][AL];
+vt<int> sub[MX];
 int t;
+ll ans;
 
 void add(int x) {
 	int v=0;
@@ -156,43 +156,47 @@ void add(int x) {
 		int u=(x&(1<<i))>>i;
 		if (tr[v][u]==0) tr[v][u]=++t;
 		v=tr[v][u];
-		cnt[v]++;
-	}
-	stop[v]=1;
-}
-
-void remove(int x) {
-	int v=0;
-	FOR(i, 29, -1, -1) {
-		int u=(x&(1<<i))>>i;
-		if (--cnt[tr[v][u]]==0) {
-			tr[v][u]=0;
-			break;
-		}
+		x&=~(1<<i);
+		sub[v].pb(x);
 	}
 }
 
-int query(int x) {
-	int v=0, ret=0;
-	FOR(i, 29, -1, -1) {
-		int u=(x&(1<<i))>>i;
-		if (tr[v][u]) {
-			v=tr[v][u];
+int query(int v, int x, int d) {
+	int ret=0;
+	FOR(i, d, -1, -1) {
+		int a=(x&(1<<i))>>i;
+		if (tr[v][a]) {
+			v=tr[v][a];
 		} else {
 			ret+=1<<i;
-			v=tr[v][u^1];
+			v=tr[v][a^1];
 		}
 	}
 	return ret;
 }
 
+void dfs(int v, int d) {
+	int a=tr[v][0], b=tr[v][1];
+	if (a!=0 && b!=0) {
+		ans+=1<<d;
+		int u=sz(sub[a])<sz(sub[b]) ? b : a;
+		vt<int>& su=sz(sub[a])<sz(sub[b]) ? sub[a] : sub[b];
+		int c=INT_MAX;
+		EACH(x, su) umin(c, query(u, x, d-1));
+		ans+=c;	
+	}
+	if (a) dfs(a, d-1);
+	if (b) dfs(b, d-1);
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n; read(n);
-	vt<int> v(n); read(v);
-	FOR(i, 1, n) add(v[i]);
-	FOR(n-1) {
-
+	int n, x; read(n);
+	FOR(n) {
+		read(x);
+		add(x);
 	}
+	dfs(0, 29);
+	print(ans);
 }
