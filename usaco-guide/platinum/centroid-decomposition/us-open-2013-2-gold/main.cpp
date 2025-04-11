@@ -1,0 +1,244 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+#define ll long long
+#define ld long double
+#define ar array
+
+#include <ext/pb_ds/assoc_container.hpp>
+#include <ext/pb_ds/tree_policy.hpp> 
+using namespace __gnu_pbds;
+
+template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
+
+#define vt vector
+#define pb push_back
+#define eb emplace_back
+#define all(c) (c).begin(), (c).end()
+#define sz(x) (int)(x).size()
+#define pll pair<ll, ll>
+#define pii pair<int, int>
+#define f first
+#define s second
+
+#define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
+#define F_OR1(e) F_OR(i, 0, e, 1)
+#define F_OR2(i, e) F_OR(i, 0, e, 1)
+#define F_OR3(i, b, e) F_OR(i, b, e, 1)
+#define F_OR4(i, b, e, s) F_OR(i, b, e, s)
+#define GET5(a, b, c, d, e, ...) e
+#define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
+#define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
+#define EACH(x, a) for (auto& x: a)
+
+template<class T> bool umin(T& a, const T& b) {
+	return b<a?a=b, 1:0;
+}
+template<class T> bool umax(T& a, const T& b) { 
+	return a<b?a=b, 1:0;
+} 
+
+ll FIRSTTRUE(function<bool(ll)> f, ll lb, ll rb) {
+	while(lb<rb) {
+		ll mb=(lb+rb)/2;
+		f(mb)?rb=mb:lb=mb+1; 
+	} 
+	return lb;
+}
+ll LASTTRUE(function<bool(ll)> f, ll lb, ll rb) {
+	while(lb<rb) {
+		ll mb=(lb+rb+1)/2;
+		f(mb)?lb=mb:rb=mb-1; 
+	} 
+	return lb;
+}
+
+template<class A> void read(vt<A>& v);
+template<class A, size_t S> void read(ar<A, S>& a);
+template<class A, class B> void read(pair<A, B>& x);
+template<class T> void read(T& x) {
+	cin >> x;
+}
+void read(double& d) {
+	string t;
+	read(t);
+	d=stod(t);
+}
+void read(long double& d) {
+	string t;
+	read(t);
+	d=stold(t);
+}
+template<class H, class... T> void read(H& h, T&... t) {
+	read(h);
+	read(t...);
+}
+template<class A> void read(vt<A>& x) {
+	EACH(a, x)
+		read(a);
+}
+template<class A, size_t S> void read(array<A, S>& x) {
+	EACH(a, x)
+		read(a);
+}
+template<class A, class B> void read(pair<A, B>& x) {
+	cin >> x.first >> x.second;
+}
+
+
+string to_string(char c) {
+	return string(1, c);
+}
+string to_string(bool b) {
+	return b?"true":"false";
+}
+string to_string(const char* s) {
+	return string(s);
+}
+string to_string(string s) {
+	return s;
+}
+string to_string(vt<bool> v) {
+	string res;
+	FOR(sz(v))
+		res+=char('0'+v[i]);
+	return res;
+}
+
+template<size_t S> string to_string(bitset<S> b) {
+	string res;
+	FOR(S)
+		res+=char('0'+b[i]);
+	return res;
+}
+template<class T> string to_string(T v) {
+    bool f=1;
+    string res;
+    EACH(x, v) {
+		if(!f)
+			res+=' ';
+		f=0;
+		res+=to_string(x);
+	}
+    return res;
+}
+template<class A, class B> string to_string(pair<A, B>& x) {
+	return to_string(x.first) + ' ' + to_string(x.second);
+}
+
+template<class A> void write(A x) {
+	cout << to_string(x);
+}
+template<class H, class... T> void write(const H& h, const T&... t) { 
+	write(h);
+	write(t...);
+}
+void print() {
+	write("\n");
+}
+template<class H, class... T> void print(const H& h, const T&... t) { 
+	write(h);
+	if(sizeof...(t))
+		write(' ');
+	print(t...);
+}
+
+int n, c; ll ans;
+vt<vt<int>> adj, cadj, nodes;
+vt<vt<pii>> wadj;
+vt<bool> vis;
+vt<int> dsz, pos;
+vt<pair<bool, int>> sum;
+
+int dfsz(int v, int p=-1) {
+	dsz[v]=1;
+	EACH(u, adj[v]) {
+		if (!vis[u] && u!=p) {
+			dsz[v]+=dfsz(u, v);
+		}
+	}
+	return dsz[v];
+}
+
+int dfsc(int v, int tsz, int p=-1) {
+	EACH(u, adj[v]) {
+		if (!vis[u] && u!=p && dsz[u]>tsz/2) {
+			return dfsc(u, tsz, v);
+		}
+	}
+	return v;
+}
+
+int centroid(int v=0, int p=-1) {
+	int c=dfsc(v, dfsz(v), p);
+	vis[c]=1;
+
+	if (p!=-1) cadj[p].pb(c);
+
+	EACH(u, adj[c]) {
+		if (!vis[u]) {
+			centroid(u, c);
+		}
+	}
+	return c;
+}
+
+void dfs(int v) {
+	nodes[v].pb(v);
+	EACH(u, cadj[v]) {
+		dfs(u);
+		nodes[v].insert(nodes[v].end(), all(nodes[u]));
+	}
+}
+
+void dfs2(int v, int d, int p=-1) {
+	if (d==0 && pos[n]>=2) ans++;
+	sum[v]={pos[d+n], d};	
+	pos[d+n]++;
+	for (auto &[u, w] : wadj[v]) {
+		if (u!=p && !vis[u]) {
+			dfs2(u, d+w, v);
+		}
+	}
+	pos[d+n]--;
+}
+
+void dfs1(int v, int p=-1) {
+	vis[v]=1;
+	EACH(u, cadj[v]) {
+		dfs1(u, v);
+	}
+	dfs2(v, 0);
+	unordered_map<int, int> cnt1, cnt2;
+	EACH(u, cadj[v]) {
+		EACH(x, nodes[u]) {
+			ans+=cnt1[-sum[x].s];
+			if (sum[x].f) ans+=cnt2[-sum[x].s];
+		}
+		EACH(x, nodes[u]) {
+			if (sum[x].f) cnt1[sum[x].s]++;
+			else cnt2[sum[x].s]++;
+		}
+	}
+	vis[v]=0;
+}
+
+int main() {
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	freopen("yinyang.in", "r", stdin);
+	freopen("yinyang.out", "w", stdout);
+	int x, y, z; read(n);
+	adj.resize(n), vis.assign(n, 0), dsz.resize(n), cadj.resize(n), wadj.resize(n), pos.assign(2*n+1, 0), sum.resize(n), nodes.resize(n);
+	FOR(n-1) {
+		read(x, y, z); --x, --y;
+		z=2*z-1;
+		adj[x].pb(y), adj[y].pb(x);
+		wadj[x].pb({y, z}), wadj[y].pb({x, z});
+	}
+	c=centroid();
+	vis.assign(n, 0);
+	dfs(c);
+	dfs1(c);
+	print(ans);
+}
