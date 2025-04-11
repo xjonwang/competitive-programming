@@ -145,33 +145,25 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int w, h, n, x, y; read(w, h, n);
-	vt<vt<int>> v(h+1);
+	int w, h, n, x, y; read(w, h, n); ++w, ++h;
+	vt<vt<bool>> v(w, vt<bool>(h, 0));
 	FOR(n) {
 		read(x, y);
-		v[y].pb(x);
+		v[x][y]=1;
 	}
-	vt<vt<bool>> p(h+1, vt<bool>(w+1, 0));
-	FOR(h+1) {
-		p[i][0]=1;
-		FOR(j, 1, w+1) EACH(x, v[i]) if (j-x>=0 && p[i][j-x]) p[i][j]=1;
-	}
-	vt<int> b(w+1, 1e9), t(h+1, 0);
-	FOR(i, 1, w+1) {
-		vt<pii> wa;
-		FOR(j, 1, h+1) {
-			if (p[j][i]) t[j]=i;
-			if (t[j]) wa.pb({j, j*(i-t[j])});
+	vt<vt<int>> dp(w, vt<int>(h));
+	FOR(w) dp[i][0]=0;
+	FOR(h) dp[0][i]=0;
+	FOR(i, 1, w) {
+		FOR(j, 1, h) {
+			if (v[i][j]) {
+				dp[i][j]=0;
+				continue;
+			}
+			dp[i][j]=i*j;
+			FOR(k, i) umin(dp[i][j], dp[k][j]+dp[i-k][j]);
+			FOR(k, j) umin(dp[i][j], dp[i][k]+dp[i][j-k]);
 		}
-		vt<int> dp(h+1, 1e9); dp[0]=0;	
-		b[i]=i*h;
-		FOR(j, 1, h+1) {
-			for (auto& [y, c] : wa) if (j-y>=0) umin(dp[j], dp[j-y]+c), umin(b[i], dp[j]+(h-j)*i);
-		}
-	}
-	vt<int> dp(w+1, 1e9); dp[0]=0;
-	FOR(i, 1, w+1) {
-		FOR(j, 1, i+1) umin(dp[i], dp[i-j]+b[j]);
-	}
-	print(dp[w]);
+	} 
+	print(dp[w-1][h-1]);
 }
