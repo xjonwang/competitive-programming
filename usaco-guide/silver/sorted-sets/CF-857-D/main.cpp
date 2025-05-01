@@ -6,7 +6,7 @@ using namespace std;
 #define ar array
 
 #include <ext/pb_ds/assoc_container.hpp>
-#include <ext/pb_ds/tree_policy.hpp> 
+#include <ext/pb_ds/tree_policy.hpp>
 using namespace __gnu_pbds;
 
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
@@ -54,7 +54,6 @@ ll LASTTRUE(function<bool(ll)> f, ll lb, ll rb) {
 
 template<class A> void read(vt<A>& v);
 template<class A, size_t S> void read(ar<A, S>& a);
-template<class A, class B> void read(pair<A, B>& x);
 template<class T> void read(T& x) {
 	cin >> x;
 }
@@ -80,10 +79,6 @@ template<class A, size_t S> void read(array<A, S>& x) {
 	EACH(a, x)
 		read(a);
 }
-template<class A, class B> void read(pair<A, B>& x) {
-	cin >> x.first >> x.second;
-}
-
 
 string to_string(char c) {
 	return string(1, c);
@@ -121,9 +116,6 @@ template<class T> string to_string(T v) {
 	}
     return res;
 }
-template<class A, class B> string to_string(pair<A, B>& x) {
-	return to_string(x.first) + ' ' + to_string(x.second);
-}
 
 template<class A> void write(A x) {
 	cout << to_string(x);
@@ -142,37 +134,28 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct mov {
-	int u1, v1, u2, v2;
-};
-
-vt<vt<int>> adj;
-vt<int> dp, si;
-vt<pii> leaf;
-
-void dfs(int v, int p=-1) {
-	if (sz(adj[v])<=2) si[v]=1;
-	else si[v]=0;
-	EACH(u, adj[v]) {
-		if (u==p) continue;
-		if (leaf[v].f==-1) leaf[v].f=leaf[u].f;
-		leaf[v].s=leaf[u].s;
-		dfs(u);
-		dp[v]+=dp[u];	
-	}
-	dp[v]+=cnt-min(sub, 2);
-}
-
 void solve() {
-	int n, x, y; read(n);
-	adj.assign(n, vt<int>());
-	dp.assign(n, 0), si.resize(n), leaf.assign(n, {-1, -1});
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y), adj[y].pb(x);
+	int n; read(n);
+	vt<int> a(n), b(n);
+	FOR(n) read(a[i], b[i]);
+	map<int, vt<int>> sa;
+	FOR(n) sa[a[i]].pb(i);
+	multiset<int> b1, b2;
+	FOR(n) b1.insert(b[i]);
+	int ans=INT_MAX;
+	for (auto &[k, v] : sa) {
+		EACH(i, v) b1.erase(b1.find(b[i])), b2.insert(b[i]);
+		EACH(i, v) {
+			b2.erase(b2.find(b[i]));
+			int mm=sz(b1) ? *prev(b1.end()) : 0;
+			if (sz(b1)) umin(ans, abs(k-mm));
+			auto it=b2.lower_bound(a[i]);
+			if (it!=b2.end() && *it>=mm) umin(ans, *it-k);
+			if (it!=b2.begin() && *prev(it)>=mm) umin(ans, k-*prev(it));
+			b2.insert(b[i]);
+		}
 	}
-	dfs(0);
-	print(dp[0]);
+	print(ans);
 }
 
 int main() {

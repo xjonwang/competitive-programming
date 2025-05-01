@@ -17,8 +17,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
-#define f first
-#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -142,37 +140,30 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct mov {
-	int u1, v1, u2, v2;
-};
-
-vt<vt<int>> adj;
-vt<int> dp, si;
-vt<pii> leaf;
-
-void dfs(int v, int p=-1) {
-	if (sz(adj[v])<=2) si[v]=1;
-	else si[v]=0;
-	EACH(u, adj[v]) {
-		if (u==p) continue;
-		if (leaf[v].f==-1) leaf[v].f=leaf[u].f;
-		leaf[v].s=leaf[u].s;
-		dfs(u);
-		dp[v]+=dp[u];	
-	}
-	dp[v]+=cnt-min(sub, 2);
-}
-
 void solve() {
-	int n, x, y; read(n);
-	adj.assign(n, vt<int>());
-	dp.assign(n, 0), si.resize(n), leaf.assign(n, {-1, -1});
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y), adj[y].pb(x);
+	int n, m; read(n, m);
+	vt<int> v1(n), v2(m); read(v1, v2);
+	sort(all(v1)), sort(all(v2));
+	vt<ll> p1(n/2+1), p2(m/2+1); p1[0]=p2[0]=0;
+	FOR(n/2) p1[i+1]=p1[i]+v1[n-1-i]-v1[i];
+	FOR(m/2) p2[i+1]=p2[i]+v2[m-1-i]-v2[i];
+	vt<ll> ans;
+	FOR(i, 1, max(n, m)+1) {
+		auto f=[&](ll x) {
+			int y=i-x;
+			if (2*x+y>n || 2*y+x>m) return 0ll;
+			return p1[x]+p2[y];
+		};
+		int l=max(2*i-m, 0), r=min(n-i, i);
+		if (l>r) break;
+		while (l<r) {
+			int m = (l+r)/2;
+			f(m)>f(m+1) ? r=m : l=m+1;
+		}
+		ans.pb(f(l));
 	}
-	dfs(0);
-	print(dp[0]);
+	print(sz(ans));
+	print(ans);
 }
 
 int main() {

@@ -6,7 +6,7 @@ using namespace std;
 #define ar array
 
 #include <ext/pb_ds/assoc_container.hpp>
-#include <ext/pb_ds/tree_policy.hpp> 
+#include <ext/pb_ds/tree_policy.hpp>
 using namespace __gnu_pbds;
 
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
@@ -16,9 +16,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
-#define pii pair<int, int>
-#define f first
-#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -54,7 +51,6 @@ ll LASTTRUE(function<bool(ll)> f, ll lb, ll rb) {
 
 template<class A> void read(vt<A>& v);
 template<class A, size_t S> void read(ar<A, S>& a);
-template<class A, class B> void read(pair<A, B>& x);
 template<class T> void read(T& x) {
 	cin >> x;
 }
@@ -80,10 +76,6 @@ template<class A, size_t S> void read(array<A, S>& x) {
 	EACH(a, x)
 		read(a);
 }
-template<class A, class B> void read(pair<A, B>& x) {
-	cin >> x.first >> x.second;
-}
-
 
 string to_string(char c) {
 	return string(1, c);
@@ -121,9 +113,6 @@ template<class T> string to_string(T v) {
 	}
     return res;
 }
-template<class A, class B> string to_string(pair<A, B>& x) {
-	return to_string(x.first) + ' ' + to_string(x.second);
-}
 
 template<class A> void write(A x) {
 	cout << to_string(x);
@@ -142,42 +131,30 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct mov {
-	int u1, v1, u2, v2;
-};
-
-vt<vt<int>> adj;
-vt<int> dp, si;
-vt<pii> leaf;
-
-void dfs(int v, int p=-1) {
-	if (sz(adj[v])<=2) si[v]=1;
-	else si[v]=0;
-	EACH(u, adj[v]) {
-		if (u==p) continue;
-		if (leaf[v].f==-1) leaf[v].f=leaf[u].f;
-		leaf[v].s=leaf[u].s;
-		dfs(u);
-		dp[v]+=dp[u];	
-	}
-	dp[v]+=cnt-min(sub, 2);
-}
-
-void solve() {
-	int n, x, y; read(n);
-	adj.assign(n, vt<int>());
-	dp.assign(n, 0), si.resize(n), leaf.assign(n, {-1, -1});
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y), adj[y].pb(x);
-	}
-	dfs(0);
-	print(dp[0]);
-}
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int t; read(t);
-	FOR(t) solve();
+	int n, m, x; read(n, m);
+	multiset<int> ms;
+	FOR(n) {
+		read(x);
+		ms.insert(x);
+	} 
+	FOR(m) {
+		read(x);
+		switch (x) {
+			case 0:
+				read(x);
+				ms.insert(x);
+				break;
+			case 1:
+				print(*ms.begin());
+				ms.erase(ms.begin());
+				break;
+			case 2:
+				print(*prev(ms.end()));
+				ms.erase(prev(ms.end()));
+				break;
+		}
+	}
 }

@@ -142,42 +142,62 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct mov {
-	int u1, v1, u2, v2;
-};
-
-vt<vt<int>> adj;
-vt<int> dp, si;
-vt<pii> leaf;
-
-void dfs(int v, int p=-1) {
-	if (sz(adj[v])<=2) si[v]=1;
-	else si[v]=0;
-	EACH(u, adj[v]) {
-		if (u==p) continue;
-		if (leaf[v].f==-1) leaf[v].f=leaf[u].f;
-		leaf[v].s=leaf[u].s;
-		dfs(u);
-		dp[v]+=dp[u];	
-	}
-	dp[v]+=cnt-min(sub, 2);
-}
-
-void solve() {
-	int n, x, y; read(n);
-	adj.assign(n, vt<int>());
-	dp.assign(n, 0), si.resize(n), leaf.assign(n, {-1, -1});
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y), adj[y].pb(x);
-	}
-	dfs(0);
-	print(dp[0]);
-}
+#define MX 1000001
+bool comp[MX];
+vt<ll> primes;
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int t; read(t);
-	FOR(t) solve();
+	FOR(i, 2, MX) {
+		if (!comp[i]) primes.pb(i);
+		EACH(p, primes) {
+			if (i*p>=MX) break;
+			comp[i*p]=1;
+			if (i%p==0) break;
+		}
+	}
+	int n; ll k; read(n, k);
+	vt<ll> v(n), e(n); read(v, e);
+	ll g=v[0];
+	FOR(i, 1, n) g=gcd(g, v[i]);
+	ll t=g;
+	vt<pii> div;
+	for (ll i=2; i*i<=t; i++) {
+		if (comp[i]) continue;
+		ll cnt=1;
+		while (g%i==0) g/=i, cnt*=i;
+		if (cnt>1) div.pb({i, cnt});
+	}
+	if (g>1) div.pb({g, g});
+	int m=sz(div), full=(1<<m)-1;
+	vt<bool> pos(1<<m);
+	FOR(1<<m) {
+		ll cost=1;
+		FOR(j, m) {
+			if (i&(1<<j)) cost*=div[j].s;
+		}	
+		if (cost<=k) pos[i]=1;
+		else pos[i]=0; 
+	}
+	vt<int> dp(1<<m, 1e9); dp[0]=0;
+	FOR(1<<m) {
+		int mask=full^i;
+		for (int j=mask; j; j=(j-1)&mask) {
+			if (pos[j]) {
+				umin(dp[i^j], dp[i]+1);
+			}
+		}
+	}
+	sort(all(e));
+	if (dp[full]==1e9) {
+		print(-1);
+	} else {
+		ll ans=0;
+		FOR(dp[full]) {
+			ans+=e[i];
+		} 
+		ans*=dp[full];
+		print(ans);
+	}
 }

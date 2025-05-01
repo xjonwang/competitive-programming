@@ -142,42 +142,41 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct mov {
-	int u1, v1, u2, v2;
+struct frac {
+	ll a, b;
 };
 
-vt<vt<int>> adj;
-vt<int> dp, si;
-vt<pii> leaf;
-
-void dfs(int v, int p=-1) {
-	if (sz(adj[v])<=2) si[v]=1;
-	else si[v]=0;
-	EACH(u, adj[v]) {
-		if (u==p) continue;
-		if (leaf[v].f==-1) leaf[v].f=leaf[u].f;
-		leaf[v].s=leaf[u].s;
-		dfs(u);
-		dp[v]+=dp[u];	
-	}
-	dp[v]+=cnt-min(sub, 2);
+bool operator<(const frac& a, const frac& b) {
+	return a.a*b.b<b.a*a.b;
 }
-
-void solve() {
-	int n, x, y; read(n);
-	adj.assign(n, vt<int>());
-	dp.assign(n, 0), si.resize(n), leaf.assign(n, {-1, -1});
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y), adj[y].pb(x);
-	}
-	dfs(0);
-	print(dp[0]);
+bool operator>(const frac& a, const frac& b) {
+	return a.a*b.b>b.a*a.b;
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int t; read(t);
-	FOR(t) solve();
+	int n; read(n);
+	vt<int> v(n); read(v);
+	sort(all(v));
+	vt<ll> pre(n+1); pre[0]=0;
+	FOR(n) pre[i+1]=pre[i]+v[i];
+	frac ma={0, 1}; pii ans={0, 0};
+	FOR(n) {
+		auto f=[&](int x) -> frac {
+			ll d=2*x+1;
+			return {pre[n]-pre[n-x]+pre[i+1]-pre[i-x]-d*v[i], d};
+		};
+		int l=0, r=min(i, n-i-1);
+		while (l<r) {
+			int m=(l+r)/2;
+			f(m)>f(m+1) ? r=m : l=m+1;
+		};
+		if (umax(ma, f(l))) ans={i, l};
+	}
+	print(2*ans.s+1);
+	vt<int> a;
+	FOR(i, ans.f-ans.s, ans.f+1) a.pb(v[i]);
+	FOR(i, n-ans.s, n) a.pb(v[i]);
+	print(a);
 }

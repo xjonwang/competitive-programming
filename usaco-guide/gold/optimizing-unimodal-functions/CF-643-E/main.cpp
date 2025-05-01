@@ -17,8 +17,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
-#define f first
-#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -142,42 +140,20 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct mov {
-	int u1, v1, u2, v2;
-};
-
-vt<vt<int>> adj;
-vt<int> dp, si;
-vt<pii> leaf;
-
-void dfs(int v, int p=-1) {
-	if (sz(adj[v])<=2) si[v]=1;
-	else si[v]=0;
-	EACH(u, adj[v]) {
-		if (u==p) continue;
-		if (leaf[v].f==-1) leaf[v].f=leaf[u].f;
-		leaf[v].s=leaf[u].s;
-		dfs(u);
-		dp[v]+=dp[u];	
-	}
-	dp[v]+=cnt-min(sub, 2);
-}
-
-void solve() {
-	int n, x, y; read(n);
-	adj.assign(n, vt<int>());
-	dp.assign(n, 0), si.resize(n), leaf.assign(n, {-1, -1});
-	FOR(n-1) {
-		read(x, y); --x, --y;
-		adj[x].pb(y), adj[y].pb(x);
-	}
-	dfs(0);
-	print(dp[0]);
-}
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int t; read(t);
-	FOR(t) solve();
+	int n; ll k1, k2, k3; read(n, k1, k2, k3);
+	vt<int> v(n); read(v);
+	auto f=[&](int x) {
+		ll add=0, sub=0;
+		FOR(n) v[i]>x ? sub+=v[i]-x : add+=x-v[i];
+		return min(add, sub)*min(k1+k2, k3)+max(add-sub, 0ll)*k1+max(sub-add, 0ll)*k2;
+	};
+	int l=0, r=1e9;
+	while (l<r) {
+		int m = (l+r)/2;
+		f(m)<f(m+1) ? r=m : l=m+1;
+	}
+	print(f(l));
 }
