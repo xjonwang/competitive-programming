@@ -142,37 +142,46 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct mov {
-	int u1, v1, u2, v2;
-};
-
 vt<vt<int>> adj;
-vt<int> dp, si;
+vt<vt<int>> ans;
 vt<pii> leaf;
 
 void dfs(int v, int p=-1) {
-	if (sz(adj[v])<=2) si[v]=1;
-	else si[v]=0;
 	EACH(u, adj[v]) {
-		if (u==p) continue;
-		if (leaf[v].f==-1) leaf[v].f=leaf[u].f;
-		leaf[v].s=leaf[u].s;
-		dfs(u);
-		dp[v]+=dp[u];	
+		adj[u].erase(find(all(adj[u]), v));
+		dfs(u, v);
 	}
-	dp[v]+=cnt-min(sub, 2);
+	leaf[v]={v, v};
+	EACH(u, adj[v]) {
+		if (leaf[v].f==leaf[u].f) {
+			leaf[v].f=leaf[u].s;
+		} else if (leaf[v].s==leaf[u].f) {
+			leaf[v].s=leaf[u].s;
+		} else {
+			ans.pb({v, u, leaf[v].s, leaf[u].f});
+			if (leaf[v].f==v) leaf[v].s=leaf[u].s;
+			else leaf[v].f=leaf[u].s;
+		}
+	}
+	if (leaf[v].s==v) swap(leaf[v].f, leaf[v].s);
+	if (leaf[v].f==v) leaf[v].f=p;
 }
 
 void solve() {
 	int n, x, y; read(n);
 	adj.assign(n, vt<int>());
-	dp.assign(n, 0), si.resize(n), leaf.assign(n, {-1, -1});
+	leaf.resize(n);
+	ans.clear();
 	FOR(n-1) {
 		read(x, y); --x, --y;
 		adj[x].pb(y), adj[y].pb(x);
 	}
 	dfs(0);
-	print(dp[0]);
+	print(sz(ans));
+	EACH(a, ans) {
+		EACH(t, a) ++t;
+		print(a);
+	}
 }
 
 int main() {

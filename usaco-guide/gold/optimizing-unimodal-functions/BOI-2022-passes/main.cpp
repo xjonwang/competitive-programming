@@ -4,7 +4,6 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
-#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -18,8 +17,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
 #define pii pair<int, int>
-#define f first
-#define s second
 
 #define F_OR(i, a, b, s) for (int i=(a); (s)>0?i<(b):i>(b); i+=(s))
 #define F_OR1(e) F_OR(i, 0, e, 1)
@@ -30,8 +27,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define F_ORC(...) GET5(__VA_ARGS__, F_OR4, F_OR3, F_OR2, F_OR1)
 #define FOR(...) F_ORC(__VA_ARGS__)(__VA_ARGS__)
 #define EACH(x, a) for (auto& x: a)
-
-#define MOD ((int)1e9+7)
 
 template<class T> bool umin(T& a, const T& b) {
 	return b<a?a=b, 1:0;
@@ -145,65 +140,77 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-bool angle[4][4]={
-	{0, 0, 0, 1},
-	{1, 0, 0, 0},
-	{0, 1, 0, 0},
-	{0, 0, 1, 0},
-};
-
-int dir(pii x, pii y) {
-	if (x.f!=y.f) return x.f<y.f ? 2 : 0;
-	else return x.s<y.s ? 3 : 1;
-}
-
-int dist(pii x, pii y) {
-	return abs(x.f-y.f)+abs(x.s-y.s);
-}
-
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("lightsout.in", "r", stdin);
-	freopen("lightsout.out", "w", stdout);
-	int n; read(n);
-	vt<pii> v(n); read(v);
-	v.pb(v.front());
-	vt<int> angles(n); angles[0]=-1;
-	vt<int> d(n); d[0]=dist(v[0], v[1]);
-	FOR(i, 1, n) {
-		angles[i]=angle[dir(v[i-1], v[i])][dir(v[i], v[i+1])];
-		d[i]=dist(v[i], v[i+1]);
+	string x; read(x);
+	int n=sz(x);
+	unordered_map<char, int> id;
+	FOR(n) if (!id.count(x[i])) id[x[i]]=sz(id);
+	int m=sz(id);
+	vt<int> v(n);
+	FOR(n) v[i]=id[x[i]];
+	vt<vt<int>> cnt(m, vt<int>(n+1));
+	FOR(m) {
+		cnt[i][0]=0;
+		FOR(j, n) cnt[i][j+1]=cnt[i][j]+(v[j]==i);
 	}
-	vt<int> pre(n+1); pre[0]=0;
-	FOR(n) pre[i+1]=pre[i]+d[i];
-	vt<int> mdist(n);
-	FOR(n) mdist[i]=min(pre[i], pre[n]-pre[i]);
-	int ans=0;
-	FOR(i, 1, n) {
-		FOR(j, 1, n) {
-			if (i==j) continue;
-			int len=min(n-i, n-j);
-			FOR(k, min(n-i, n-j)) {
-				if (angles[i+k]!=angles[j+k]) {
-					len=k;
-					break;
-				}
-				if (d[i+k]!=d[j+k]) {
-					len=k+1;
-					break;
-				}
+	vt<vt<ll>> opt(m, vt<ll>(m, 0));
+	vt<vt<vt<ll>>> diff(m, vt<vt<ll>>(m, vt<ll>(n+1)));
+	FOR(m) {
+		FOR(j, m) {
+			int mul=i==j ? 1 : 2;
+			diff[i][j][0]=0;
+			FOR(k, n) {
+				if (v[k]!=i) continue;
+				opt[i][j]+=mul*min(cnt[j][k], cnt[j][n]-cnt[j][k+1]);
+				diff[i][j][k+1]=mul*(max(cnt[j][k], cnt[j][n]-cnt[j][k+1])-min(cnt[j][k], cnt[j][n]-cnt[j][k+1]));
 			}
-			umax(ans, pre[i+len]-pre[i]+mdist[(i+len)%n]-mdist[i]);
+			FOR(k, n) diff[i][j][k+1]+=diff[i][j][k];
 		}
 	}
-	print(ans);
+	vt<int> smed(m);
+	FOR(m) {
+		auto f=[&](ll idx) {
+			return cnt[i][idx+1]>=cnt[i][n]-cnt[i][idx+1];
+		};
+		smed[i]=FIRSTTRUE(f, 0, n-1);
+	}
+	vt<vt<int>> med(1<<m, vt<int>(m));
+	FOR(1<<m) {
+		FOR(j, m) {
+			if (i&(1<<j)) continue;
+			auto f=[&](ll idx) {
+				int precnt=0, postcnt=0;
+				precnt+=cnt[j][idx+1];
+				postcnt+=cnt[j][n]-cnt[j][idx+1];
+				FOR(k, m) {
+					if (i&(1<<k)) {
+						precnt+=2*cnt[k][idx+1];
+						postcnt+=2*(cnt[k][n]-cnt[k][idx+1]);
+					}
+				}
+				return precnt>=postcnt;
+			};
+			med[i][j]=FIRSTTRUE(f, 0, n-1);
+		}
+	}
+	vt<ll> dp(1<<m, 1e18); dp[0]=0;
+	FOR(i, 1, 1<<m) {
+		FOR(j, m) {
+			if (i&(1<<j)) {
+				ll cost=dp[i^(1<<j)];
+				int mset=med[i^(1<<j)][j];
+				FOR(k, m) {
+					int mopt=smed[k];
+					if (i&(1<<k)) {
+						cost+=opt[j][k]+diff[j][k][max(mopt, mset)+1]-diff[j][k][min(mopt, mset)+1];
+					}
+				}
+				umin(dp[i], cost);
+			}
+		}
+	}
+	if (dp[(1<<m)-1]%2) write(dp[(1<<m)-1]/2, '.', 5), print();
+	else print(dp[(1<<m)-1]/2);
 }
-
-/*
-4
-0 0
-0 10
-1 10
-1 0
-*/
