@@ -12,10 +12,7 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
-#define eb emplace_back
 #define pb push_back
-#define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -145,71 +142,17 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
-
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
-	}
-}
-
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
-
-	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
-	}
-}
+struct qu {
+	int l, r, k, i;
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
+	int n, m; read(n, m);
+	vt<int> v(n); read(v);
+	vt<qu> q(m);
 	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
-		}
+		int l, r, k, i; read(l, r, k, i); 
 	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
-		}
-	}
-	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
-	}
-	depth[start]=0;
-	dfs1(start);
-
 }

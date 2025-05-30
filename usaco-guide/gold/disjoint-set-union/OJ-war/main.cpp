@@ -142,18 +142,35 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct dsu {
-	vt<int> e, color;
-	dsu(int n) : e(vt<int>(n, -1)), color(vt<int>(n, 0)) {}
+struct DSU {
+	vt<int> e, o;
+	DSU(int n) : e(n, -1), o(n, -1) {}
 	int get(int x) { return e[x]<0 ? x : e[x]=get(e[x]); }
 	int size(int x) { return e[x]<0 ? -e[x] : size(e[x]); }
-	bool unite(int x, int y) {
+	bool same(int x, int y) { return get(x)==get(y); }
+	bool enemy(int x, int y) {
 		x=get(x), y=get(y);
-		if (x==y) return true;
+		return get(o[x])==y && get(o[y])==x;
+	}
+	int unite(int x, int y) {
+		x=get(x), y=get(y);
+		if (x==y) return 0;
+		if (o[x]!=-1 && o[y]!=-1 && get(o[x])==y && get(o[y])==x) return -1;
 		if (e[x]>e[y]) swap(x, y);
 		e[x]+=e[y];
 		e[y]=x;
-		return (color[x] && color[y] && color[x]!=color[y]) ? false : true;
+		if (o[x]!=-1 && o[y]!=-1) return unite(o[x], o[y]);
+		else if (o[x]==-1) swap(o[x], o[y]);
+		return 1;
+	}
+	int add_enemy(int x, int y) {
+		x=get(x), y=get(y);
+		if (x==y) return -1;
+		if (o[x]==-1) o[x]=y;
+		else if (unite(o[x], y)==-1) return -1;
+		if (o[y]==-1) o[y]=x;
+		else if (unite(o[y], x)==-1) return -1;
+		return 0;
 	}
 };
 
@@ -161,27 +178,23 @@ int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
 	int n, c, a, b; read(n);
-	dsu d(n);
+	DSU dsu(n);
 	while (1) {
 		read(c, a, b);
 		if (c==0) break;
 		switch (c) {
 			case 1:
-				if (!d.unite(a, b)) print(-1);
+				if (dsu.unite(a, b)==-1) print(-1);
+				break;
 			case 2:
-				a=d.get(a), b=d.get(b);
-				if (d.color[a] && d.color[b]) {
-					if (fill[abs(d.color[a])]*d.color[a]>0 ^ fill[abs(d.color[b])]*d.color[b]>0) print(-1);
-				} else if (d.color[a]) {
-					d.color[b]=-d.color[a];
-				} else if (d.color[b]) {
-					d.color[a]=-d.color[b];
-				} else {
-					
-				}
+				if (dsu.add_enemy(a, b)==-1) print(-1);
+				break;
 			case 3:
-
+				print(dsu.same(a, b) ? 1 : 0);
+				break;
 			case 4:
+				print(dsu.enemy(a, b) ? 1 : 0);
+				break;
 		}
 	}
 }

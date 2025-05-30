@@ -145,24 +145,73 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
+struct node {
+	map<int, int, greater<int>> fac;
+	int depth() const {
+		int cnt=0;
+		for (auto it=fac.begin(); it!=fac.end(); it++) cnt+=it->s;
+		return cnt;
+	}
+};
+
+bool operator==(const node& a, const node& b) {
+	return a.fac==b.fac;
+}
+
+bool operator<(const node& a, const node& b) {
+	int n=sz(a.fac), m=sz(b.fac);
+	if (m==0) return false;
+	if (n==0) return true;
+	auto ita=a.fac.begin(), itb=b.fac.begin();
+	for (int i=0; i<min(n, m)-1; i++, ita++, itb++) {
+		if ((ita->f)!=(itb->f)) return (ita->f)>(itb->f);
+		if ((ita->s)!=(itb->s)) return (ita->s)>(itb->s);
+	}
+	if ((ita->f)!=(itb->f)) return (ita->f)>(itb->f);
+	return n!=m ? n<m : (ita->s)<(itb->s);
+}
+
+node node_lca(const node& a, const node& b) {
+	node ret;
+	auto ita=a.fac.begin(), itb=b.fac.begin();
+	while (ita!=a.fac.end() && itb!=b.fac.end()) {
+		if ((ita->f)!=(itb->f)) break;
+		ret.fac[ita->f]=min(ita->s, itb->s);
+		if ((ita->s)!=(itb->s)) break;
+		ita++, itb++;
+	}
+	return ret;
+}
+
+int node_dist(const node& a, const node &b) {
+	node lca=node_lca(a, b);
+	return a.depth()+b.depth()-2*lca.depth();
+}
+
+#define MX 6
+
+bool comp[MX];
+vt<int> prime;
+
+vt<vt<pair<int, ll>>> adj;
+vt<ll> dpcnt;
+vt<pll> chi, par;
+ll ans=LLONG_MAX;
 
 void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
+	chi[v]={dpcnt[v], 0};
+	for (auto &[u, w] : adj[v]) {
 		dfs1(u);
+		chi[v].f+=chi[u].f;
+		chi[v].s+=chi[u].s+chi[u].f*w;
 	}
 }
 
 void dfs2(int v) {
+	umin(ans, chi[v].s+par[v].s);
 	for (auto &[u, w] : adj[v]) {
-
-	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
+		par[u]={par[v].f+chi[v].f-chi[u].f, par[v].s+chi[v].s-(chi[u].s+chi[u].f*w)};
+		par[u].s+=par[u].f*w;
 		dfs2(u);
 	}
 }
@@ -170,46 +219,47 @@ void dfs2(int v) {
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
-	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
+	FOR(i, 2, MX) {
+		if (!comp[i]) prime.pb(i);
+		EACH(p, prime) {
+			if (i*p>=MX) break;
+			comp[i*p]=1;
+			if (i%p==0) break;
 		}
 	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
-		}
-	}
+	int n; read(n);
+	vt<int> cnt(MX, 0);
 	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
+		int x; read(x);
+		cnt[x]++;
 	}
-	depth[start]=0;
-	dfs1(start);
-
+	map<int, int, greater<int>> fac;
+	vt<node> g;
+	map<node, int> gcnt;
+	FOR(i, 2, MX) {
+		int t=i;
+		EACH(p, prime) {
+			if (p*p>t) break;
+			while (t%p==0) fac[p]++, t/=p;
+		}
+		if (t>1 && !comp[t]) fac[t]++;
+		g.eb(fac);
+		gcnt[g.back()]=cnt[i];
+	}
+	sort(all(g));
+	FOR(MX-3) g.pb(node_lca(g[i], g[i+1]));
+	sort(all(g));
+	g.erase(unique(all(g)), g.end());
+	int m=sz(g);
+	adj.rsz(m), dpcnt.rsz(m), chi.rsz(m), par.rsz(m);
+	map<node, int> id;
+	FOR(m) id[g[i]]=i, dpcnt[i]=gcnt[g[i]];
+	FOR(i, 1, m) {
+		node lca=node_lca(g[i], g[i-1]);
+		adj[id[lca]].eb(id[g[i]], node_dist(lca, g[i]));
+	}
+	dfs1(0);
+	par[0]={0, 0};
+	dfs2(0);
+	print(ans);
 }

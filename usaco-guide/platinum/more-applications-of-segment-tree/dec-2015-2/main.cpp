@@ -12,10 +12,7 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
-#define eb emplace_back
 #define pb push_back
-#define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -145,71 +142,67 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
+struct card {
+	int w, e, b;
+};
 
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
-	}
+card combine(const card& l, const card& r) {
+	int c=min(r.b, l.e);
+	return {l.w+r.w+c, l.e+r.e-c, l.b+r.b-c};
 }
 
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
-
+struct ST {
+	int n;
+	vt<card> v;
+	ST(int n) : n(n), v(2*n, {0, 0, 0}) {}
+	void set(int i, int x) {
+		i+=n;
+		switch (x) {
+			case -1:
+				v[i]={0, 1, 0};
+				break;
+			case 1:
+				v[i]={0, 0, 1};
+				break;
+		}
+		for (; i>>=1;) {
+			v[i]=combine(v[i<<1], v[i<<1|1]);
+		}
 	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
+	int query(int l, int r) {
+		card retl={0, 0, 0}, retr={0, 0, 0};
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) retl=combine(retl, v[l++]);
+			if (r&1) retr=combine(v[--r], retr);
+		}
+		return combine(retl, retr).w;
 	}
-}
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
-	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
-		}
-	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
-		}
-	}
+	freopen("cardgame.in", "r", stdin);
+	freopen("cardgame.out", "w", stdout);
+	int n; read(n);
+	vt<int> e(n), b; read(e);
+	vt<bool> vis(2*n, 0);
+	EACH(x, e) vis[--x]=1;
+	FOR(i, 2*n-1, -1, -1) if (!vis[i]) b.pb(i);
+	ST hi(2*n);
+	vt<int> ans(n+1, 0);
 	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
+		hi.set(e[i], -1);
+		hi.set(b[i], 1);
+		ans[i+1]+=hi.query(0, 2*n);
 	}
-	depth[start]=0;
-	dfs1(start);
-
+	ST lo(2*n);
+	FOR(i, n-1, -1, -1) {
+		lo.set(2*n-1-e[i], -1);
+		lo.set(2*n-1-b[i], 1);
+		ans[i]+=lo.query(0, 2*n);	
+	}
+	int a=0;
+	FOR(n+1) umax(a, ans[i]);
+	print(a);
 }

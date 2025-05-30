@@ -1,3 +1,6 @@
+#pragma GCC optimize("Ofast")
+#pragma GCC target("avx2")
+
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -15,7 +18,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define eb emplace_back
 #define pb push_back
 #define rsz resize
-#define asn assign
+#define fr front()
+#define bk back()
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -114,15 +118,15 @@ template<size_t S> string to_string(bitset<S> b) {
 	return res;
 }
 template<class T> string to_string(T v) {
-    bool f=1;
-    string res;
-    EACH(x, v) {
+	bool f=1;
+	string res;
+	EACH(x, v) {
 		if(!f)
 			res+=' ';
 		f=0;
 		res+=to_string(x);
 	}
-    return res;
+	return res;
 }
 template<class A, class B> string to_string(pair<A, B>& x) {
 	return to_string(x.first) + ' ' + to_string(x.second);
@@ -145,71 +149,82 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
-
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
+template<bool directed> struct Euler {
+	int N; vt<vt<pii>> adj; vt<vt<pii>::iterator> its; vt<bool> used;
+	void init(int _N) { N = _N; adj.rsz(N); }
+	void ae(int a, int b) {
+		int M = sz(used); used.pb(0); 
+		adj[a].eb(b,M); if (!directed) adj[b].eb(a,M); }
+	vt<pii> solve(int src = 0) { 
+		its.rsz(N); FOR(N) its[i]=adj[i].begin();
+		vt<pii> ans, st{{src,-1}};
+		int lst = -1;
+		while (sz(st)) { 
+			int x = st.bk.f; auto& it=its[x], en=adj[x].end();
+			while (it != en && used[it->s]) ++it;
+			if (it == en) {
+				if (lst != -1 && lst != x) return {};
+				ans.pb(st.bk); st.pop_back(); if (sz(st)) lst=st.bk.f;
+			} else st.pb(*it), used[it->s] = 1;
+		}
+		if (sz(ans) != sz(used)+1) return {}; 
+		reverse(all(ans)); return ans;
 	}
-}
+};
 
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
+vt<vt<int>> adj(1<<20);
+vt<bool> vis(1<<20);
 
-	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
-	}
+void dfs(int v) {
+	vis[v]=1;
+	EACH(u, adj[v]) if (!vis[u]) dfs(u);
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
-	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
+	int n; read(n);
+	vt<pii> g(n); read(g);
+	auto build=[&](ll x) {
+		Euler<false> euler; euler.init(4*n);
+		FOR(n) euler.ae(2*i, 2*i+1);
+		int mask=(1<<x)-1, cnt=0;
+		vt<int> id(1<<x, -1);
+		FOR(n) {
+			int u=g[i].f&mask, v=g[i].s&mask;
+			if (id[u]==-1) id[u]=cnt++;
+			if (id[v]==-1) id[v]=cnt++;
+			int iu=id[u]+2*n, iv=id[v]+2*n;
+			euler.ae(2*i, iu);
+			euler.ae(2*i+1, iv);
 		}
-	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
+		return euler.solve();
+	};
+	auto check=[&](ll x) {
+		vt<int> deg(1<<x, 0);
+		int mask=(1<<x)-1;
+		FOR(1<<x) adj[i].clear(), vis[i]=0;
+		FOR(n) {
+			int u=g[i].f&mask, v=g[i].s&mask;
+			adj[u].pb(v), adj[v].pb(u);
 		}
+		int cnt=0;
+		FOR(1<<x) {
+			if (sz(adj[i])&1) return false;
+			if (!vis[i] && sz(adj[i])) cnt++, dfs(i);
+		}
+		return cnt==1;
+	};
+	int a=LASTTRUE(check, 0, 20);
+	print(a);
+	if (a>0) {
+		vt<pii> seq=build(a);
+		vt<int> ans;
+		for (auto &[v, _] : seq) if (v<2*n) ans.pb(v+1);
+		ans.pop_back();
+		print(ans);
+	} else {
+		vt<int> ans(2*n); iota(all(ans), 1);
+		print(ans);
 	}
-	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
-	}
-	depth[start]=0;
-	dfs1(start);
-
 }

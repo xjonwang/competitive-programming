@@ -15,7 +15,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define eb emplace_back
 #define pb push_back
 #define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -145,71 +144,74 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
+struct DSU {
+	vt<int> e;
+	DSU(int n) : e(n, -1) {}
+	int get(int x) { return e[x]<0 ? x : e[x]=get(e[x]); }
+	int size(int x) { return e[x]<0 ? -e[x] : size(e[x]); }
+	bool unite(int x, int y) {
+		x=get(x), y=get(y);
+		if (x==y) return false;
+		if (e[x]>e[y]) swap(x, y);
+		e[x]+=e[y];
+		e[y]=x;
+		return true;
+	}
+};
+
+int n, m;
+vt<vt<int>> adj;
+map<int, int> cnt;
+set<pii> q;
 vt<bool> vis;
-
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
-	}
-}
-
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
-
-	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
-	}
-}
+vt<vt<pii>> ed;
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
+	read(n, m);
+	adj.rsz(n), vis.rsz(n, 0), ed.rsz(n);
+	int x, y;
 	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
+		read(x, y); --x, --y;
+		adj[x].pb(y), adj[y].pb(x);
+	}
+	FOR(n) cnt[i]=sz(adj[i]), q.insert({sz(adj[i]), i});
+	FOR(i, 1, n) {
+		while (sz(q) && q.begin()->f<=i) {
+			auto [_, v]=*q.begin(); q.erase(q.begin());
+			vis[v]=1;
+			EACH(u, adj[v]) {
+				if (vis[u]) continue;
+				ed[i].eb(v, u);
+				int& c=cnt[u];
+				q.erase(q.find({c--, u}));
+				q.insert({c, u});
 			}
 		}
 	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
+	DSU dsu(n);
+	ll ans=0;
+	FOR(i, n-1, 0, -1) {
+		for (auto &[u, v] : ed[i]) {
+			dsu.unite(u, v);
+			umax(ans, ((ll)i)*dsu.size(u));
+			umax(ans, ((ll)i)*dsu.size(v));
 		}
 	}
-	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
-	}
-	depth[start]=0;
-	dfs1(start);
-
+	print(ans);
 }
+
+/*
+8 10
+1 2
+1 3
+1 4
+2 3
+2 4
+3 4
+1 5
+2 6
+3 7
+4 8
+*/

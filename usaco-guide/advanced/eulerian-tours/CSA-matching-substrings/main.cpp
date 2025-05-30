@@ -15,7 +15,8 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define eb emplace_back
 #define pb push_back
 #define rsz resize
-#define asn assign
+#define fr front()
+#define bk back()
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -114,15 +115,15 @@ template<size_t S> string to_string(bitset<S> b) {
 	return res;
 }
 template<class T> string to_string(T v) {
-    bool f=1;
-    string res;
-    EACH(x, v) {
+	bool f=1;
+	string res;
+	EACH(x, v) {
 		if(!f)
 			res+=' ';
 		f=0;
 		res+=to_string(x);
 	}
-    return res;
+	return res;
 }
 template<class A, class B> string to_string(pair<A, B>& x) {
 	return to_string(x.first) + ' ' + to_string(x.second);
@@ -145,71 +146,65 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
-
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
+template<bool directed> struct Euler {
+	int N; vt<vt<pii>> adj; vt<vt<pii>::iterator> its; vt<bool> used;
+	void init(int _N) { N = _N; adj.rsz(N); }
+	void ae(int a, int b) {
+		int M = sz(used); used.pb(0); 
+		adj[a].eb(b,M); if (!directed) adj[b].eb(a,M); }
+	vt<pii> solve(int src = 0) { 
+		its.rsz(N); FOR(N) its[i]=adj[i].begin();
+		vt<pii> ans, st{{src,-1}};
+		int lst = -1;
+		while (sz(st)) { 
+			int x = st.bk.f; auto& it=its[x], en=adj[x].end();
+			while (it != en && used[it->s]) ++it;
+			if (it == en) {
+				if (lst != -1 && lst != x) return {};
+				ans.pb(st.bk); st.pop_back(); if (sz(st)) lst=st.bk.f;
+			} else st.pb(*it), used[it->s] = 1;
+		}
+		if (sz(ans) != sz(used)+1) return {}; 
+		reverse(all(ans)); return ans;
 	}
-}
-
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
-
-	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
-	}
-}
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
-	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
+	int n, m; read(n, m);
+	if (m==1) {
+		string ans;
+		FOR(n) {
+			string x; read(x);
+			ans+=x;
 		}
+		print(ans);
+		return 0;
 	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
-		}
-	}
+	Euler<true> euler;
+	euler.init(2*n);
+	vt<int> cnt(2*n, 0);
+	unordered_map<string, int> id;
 	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
+		string x; read(x);
+		string u=x.substr(0, m-1), v=x.substr(1, m-1);
+		if (!id.count(u)) id[u]=sz(id);
+		if (!id.count(v)) id[v]=sz(id);
+		int iu=id[u], iv=id[v];
+		euler.ae(iu, iv);
+		cnt[iu]++, cnt[iv]--;
 	}
-	depth[start]=0;
-	dfs1(start);
-
+	vt<string> rid(sz(id));
+	for (auto &[k, v] : id) rid[v]=k;
+	int src=0;
+	FOR(2*n) if (cnt[i]==1) src=i;
+	vt<pii> seq=euler.solve(src);
+	if (sz(seq)) {
+		string ans=rid[seq[0].f];
+		FOR(i, 1, sz(seq)) ans+=rid[seq[i].f].bk;
+		print(ans);
+	} else {
+		print(-1);
+	}
 }

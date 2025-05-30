@@ -14,8 +14,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define vt vector
 #define eb emplace_back
 #define pb push_back
-#define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -145,71 +143,51 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
-
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
+struct FT {
+	int n; vt<int> v;
+	FT(int a) : n(a), v(a, 0) {}
+	void modify(int i, int x) {
+		for (; i<n; i|=i+1) v[i]+=x;
+	}	
+	int query(int i) {
+		int ret=0;
+		for (; i>0; i&=i-1) ret+=v[i-1];
+		return ret;
 	}
-}
-
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
-
+	int query(int l, int r) {
+		return query(r)-query(l);
 	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
-	}
-}
+};
+
+struct que {
+	int l, r, idx;
+};
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
+	int n; read(n);
+	vt<int> a(n), b(n); read(a, b);
+	vt<int> bidx(n);
+	FOR(n) bidx[--b[i]]=i;
+	int m; read(m);
+	vt<vt<que>> sub(n), add(n);
+	vt<int> ans(m);
 	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
-		}
+		int l1, r1, l2, r2; read(l1, r1, l2, r2); --l1, --r1, --l2, --r2;
+		ans[i]=r1-l1+1;
+		sub[l1].pb({l2, r2+1, i});
+		add[r1].pb({l2, r2+1, i});
 	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
-		}
-	}
+	FT ft(n);
 	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
+		for (auto &[l, r, idx] : sub[i]) {
+			ans[idx]+=ft.query(l, r);
+		}
+		ft.modify(bidx[--a[i]], 1);	
+		for (auto &[l, r, idx] : add[i]) {
+			ans[idx]-=ft.query(l, r);
+		}
 	}
-	depth[start]=0;
-	dfs1(start);
-
+	EACH(a, ans) print(a);
 }

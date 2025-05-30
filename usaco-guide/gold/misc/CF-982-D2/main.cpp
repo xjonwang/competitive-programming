@@ -4,6 +4,7 @@ using namespace std;
 #define ll long long
 #define ld long double
 #define ar array
+#define str string
 
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp> 
@@ -12,10 +13,7 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
-#define eb emplace_back
 #define pb push_back
-#define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -145,32 +143,67 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define MOD 1000000007
+
+using H = ar<int,2>;
+constexpr H ZERO={0, 0};
+H makeH(int a, int b) { return {a, b}; }
+H operator+(H l, H r) { 
+	FOR(2) if ((l[i] += r[i]) >= MOD) l[i] -= MOD;
+	return l; }
+H& operator+=(H& l, const H& r) { 
+	FOR(2) if ((l[i] += r[i]) >= MOD) l[i] -= MOD;
+	return l; }
+H operator-(H l, H r) { 
+	FOR(2) if ((l[i] -= r[i]) < 0) l[i] += MOD;
+	return l; }
+H& operator-=(H& l, const H& r) { 
+	FOR(2) if ((l[i] -= r[i]) < 0) l[i] += MOD;
+	return l; }
+H operator*(H l, H r) {
+	FOR(2) l[i] = (ll)l[i]*r[i]%MOD;
+	return l; }
+H& operator*=(H& l, const H& r) {
+	FOR(2) l[i] = (ll)l[i]*r[i]%MOD;
+	return l; }
+bool operator<(H a, H b) {
+	return a[0]<b[0]; }
+bool operator<=(H a, H b) {
+	return a[0]<=b[0]; }
+
 struct ST {
 	int n, h;
-	vt<int> sum, pre, delta, len;
-	ST(int a_n, const vt<int>& a_len) : n(1) {
-		while (n<a_n) n<<=1;
+	vt<H> v, ls, la;
+	ST(int a) : n(1) {
+		while (n<a) n<<=1;
 		h=32-__builtin_clz(n);
-		sum.asn(2*n, 0), pre.asn(2*n, 0), delta.asn(2*n, INT_MAX), len.asn(2*n, 0);
-		FOR(a_n) len[n+i]=a_len[i];
-		FOR(i, n-1, 0, -1) len[i]=len[i<<1]+len[i<<1|1];
+		v.assign(2*n, {INT_MAX, -1}), ls.assign(2*n, {0, 0}), la.assign(2*n, {0, 0});
 	}
-	void apply(int i, int x) {
-		sum[i]=len[i]*x;
-		pre[i]=max(0, sum[i]);
-		if (i<n) delta[i]=x;
+	void apply_set(int i, H x) {
+		v[i]=x;
+		if (i<n) ls[i]=x, la[i]={0, 0};
+	}
+	void apply_add(int i, H x) {
+		v[i]+=x;
+		if (i<n) la[i]+=x;
 	}
 	void build(int i) {
 		for (; i>>=1;) {
-			if (delta[i]!=INT_MAX) sum[i]=len[i]*delta[i], pre[i]=max(0, sum[i]);
-			else sum[i]=sum[i<<1]+sum[i<<1|1], pre[i]=max(pre[i<<1], sum[i<<1]+pre[i<<1|1]);
+			if (ls[i]!=ZERO) v[i]=ls[i];
+			else v[i]=max(v[i<<1], v[i<<1|1]);
+			if (la[i]!=ZERO) v[i]+=la[i];
 		}
 	}
 	void push(int i) {
-		if (delta[i]!=INT_MAX) {
-			apply(i<<1, delta[i]);
-			apply(i<<1|1, delta[i]);
-			delta[i]=INT_MAX;
+		if (ls[i]!=ZERO) {
+			apply_set(i<<1, ls[i]);
+			apply_set(i<<1|1, ls[i]);
+			ls[i]={0, 0};
+		}
+		if (la[i]!=ZERO) {
+			apply_add(i<<1, la[i]);
+			apply_add(i<<1|1, la[i]);
+			la[i]={0, 0};
 		}
 	}
 	void propagate(int i) {
@@ -178,106 +211,104 @@ struct ST {
 			push(i>>j);
 		}
 	}
-	void set(int l, int r, int x) {
+	void add(int l, int r, H x) {
 		l+=n, r+=n;
 		int l0=l, r0=r-1;
-		propagate(l0), propagate(r0);
-		for (; l<r; l>>=1, r>>=1) {
-			if (l&1) apply(l++, x);
-			if (r&1) apply(--r, x);
+		propagate(l0);
+		propagate(r0);
+		for(; l<r; l>>=1, r>>=1) {
+			if (l&1) apply_add(l++, x);
+			if (r&1) apply_add(--r, x);
 		}
-		build(l0), build(r0);
+		build(l0);
+		build(r0);
 	}
-	int query_pre(int x) {
-		if (pre[1]<=x) return n;
-		int idx=1;
-		while (idx<n) {
-			push(idx);
-			if (pre[idx<<1]>x) idx=idx<<1;
-			else x-=sum[idx<<1], idx=idx<<1|1;
-		}
-		return idx-n;
-	}
-	int query_sum(int l, int r) {
+	void set(int l, int r, H x) {
 		l+=n, r+=n;
-		propagate(l), propagate(r-1);
-		int ret=0;
+		int l0=l, r0=r-1;
+		propagate(l0);
+		propagate(r0);
+		for(; l<r; l>>=1, r>>=1) {
+			if (l&1) apply_set(l++, x);
+			if (r&1) apply_set(--r, x);
+		}
+		build(l0);
+		build(r0);
+	}
+	H query(int l, int r) {
+		l+=n, r+=n;
+		propagate(l);
+		propagate(r-1);
+		H ret={INT_MAX, -1};
 		for (; l<r; l>>=1, r>>=1) {
-			if (l&1) ret+=sum[l++];
-			if (r&1) ret+=sum[--r];
+			if (l&1) umin(ret, v[l++]);
+			if (r&1) umin(ret, v[--r]);
 		}
 		return ret;
 	}
-	int query_slope(int i) {
-		i+=n;
-		propagate(i);
-		return sum[i]/len[i];
-	}
-};
-
-int n, m;
-
-class IQuery {
-public:
-	virtual void process(ST& st, map<int, int>& idx, const vt<int>& ridx) = 0;
-};
-
-class Reconfig : public IQuery {
-private:
-	int l, r, d;
-public:
-	Reconfig(int l, int r, int d) : l(l), r(r), d(d) {}
-	void process(ST& st, map<int, int>& idx, const vt<int>& ridx) override {
-		st.set(idx[l], idx[r], d);
-	}
-};
-
-class Ride : public IQuery {
-private:
-	int h;
-public:
-	Ride(int h) : h(h) {}
-	void process(ST& st, map<int, int>& idx, const vt<int>& ridx) override {
-		int ub=st.query_pre(h);
-		if (ub>=m) {
-			print(n);
-			return;
+	int lower_bound(H x) {
+		if (v[1]<x) return n;
+		int idx=1;
+		while (idx<n) {
+			push(idx);	
+			if (v[idx<<1]<x) idx<<=1, idx|=1;
+			else idx<<=1;
 		}
-		int slope=st.query_slope(ub);
-		int sum=st.query_sum(0, ub);
-		print(ridx[ub]+(h-sum)/slope);
+		return idx-n;
+	}
+	int upper_bound(H x) {
+		if (v[1]<=x) return n;
+		int idx=1;
+		while (idx<n) {
+			push(idx);	
+			if (v[idx<<1]<=x) idx<<=1, idx|=1;
+			else idx<<=1;
+		}
+		return idx-n;
 	}
 };
+
+void solve() {
+	int n, m; read(n, m);
+	vt<int> a(n), b(m); read(a, b);
+	vt<ll> pre(n+1); pre[0]=0;
+	FOR(n) pre[i+1]=pre[i]+a[i];
+	vt<ST> dp(m, n+1);
+	dp[0].set(0, 1, {0, 1});
+	FOR(n) {
+		H x={INT_MAX, -1};
+		FOR(j, m) {
+			H y=dp[j].query(i, i+1);
+			if (y[0]!=INT_MAX) {
+				if (x[0]>y[0]) x=y;
+				else if (x[0]==y[0]) x+={0, y[1]};
+			}
+			if (x[0]==INT_MAX) continue;
+			auto c=[&](ll idx) {
+				return pre[idx]-pre[i]<=b[j];
+			};
+			int r=LASTTRUE(c, i, n);
+			H u=x+makeH(m-j-1, 0);
+			int lb=dp[j].lower_bound(u);
+			int ub=dp[j].upper_bound(u);
+			if (lb<=r) dp[j].add(max(lb, i+1), min(ub, r+1), {0, u[1]});
+			if (ub<=r) dp[j].set(ub, r+1, u);
+		}
+	}
+	H ans={INT_MAX, -1};
+	FOR(m) {
+		H x=dp[i].query(n, n+1);
+		if (x[0]==INT_MAX) continue;
+		if (ans[0]>x[0]) ans=x;
+		else if (ans[0]==x[0]) ans+={0, x[1]};
+	}
+	if (ans[0]!=INT_MAX) print(ans[0], ans[1]);
+	else print(-1);
+}
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	read(n);
-	char c; int x, y, z;
-	vt<unique_ptr<IQuery>> q;
-	vt<int> ridx={0, n};
-	while (true) {
-		read(c);
-		if (c=='E') break;
-		switch (c) {
-			case 'I':
-				read(x, y, z); --x;
-				q.eb(new Reconfig(x, y, z));
-				ridx.pb(x), ridx.pb(y);
-				break;
-			case 'Q':
-				read(x);
-				q.eb(new Ride(x));
-				break;
-		}
-	}
-	sort(all(ridx));
-	ridx.erase(unique(all(ridx)), ridx.end());
-	m=sz(ridx);
-	map<int, int> idx;
-	FOR(sz(ridx)) idx[ridx[i]]=i;
-	vt<int> len(m-1);
-	FOR(m-1) len[i]=ridx[i+1]-ridx[i];
-	ST st(m-1, len);
-	EACH(x, q) x->process(st, idx, ridx);
+	int t; read(t);
+	FOR(t) solve();
 }

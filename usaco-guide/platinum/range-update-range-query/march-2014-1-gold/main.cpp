@@ -12,10 +12,7 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
-#define eb emplace_back
 #define pb push_back
-#define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -145,71 +142,82 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
-
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
+struct ST {
+	int n, h;
+	vt<int> v, d;
+	ST(int n) : n(n), h(32-__builtin_clz(n)), v(2*n, 0), d(n, 0) {}
+	void apply(int i, int x) {
+		v[i]+=x;
+		if (i<n) d[i]=x;
 	}
-}
-
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
-
+	void push(int i) {
+		if (d[i]) {
+			apply(i<<1, d[i]);
+			apply(i<<1|1, d[i]);
+			d[i]=0;
+		}
 	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
+	void build(int i) {
+		for (; i>>=1;) {
+			v[i]=max(v[i<<1], v[i<<1|1])+d[i];
+		}
 	}
-}
+	void propagate(int i) {
+		FOR(j, h, 0, -1) push(i>>j);
+	}
+	void add(int l, int r, int x) {
+		l+=n, r+=n;
+		int l0=l, r0=r-1;
+		propagate(l0), propagate(r0);
+		for (; l<r; l>>=1, r>>=1) {
+			if (l&1) apply(l++, x);
+			if (r&1) apply(--r, x);
+		}
+		build(l0), build(r0);
+	}
+	int query(int l, int r) {
+		l+=n, r+=n;
+		propagate(l), propagate(r-1);
+		int ret=0;
+		for (; l<r; l>>=1, r>>=1) {
+			if (l&1) umax(ret, v[l++]);
+			if (r&1) umax(ret, v[--r]);
+		}
+		return ret;
+	}
+};
+
+struct gr {
+	int x, y, z;
+};
+
+#define MAXN 4000001
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
-	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
-		}
-	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
-		}
-	}
+	freopen("lazy.in", "r", stdin);
+	freopen("lazy.out", "w", stdout);
+	int n, k, x, y, z; read(n, k); k=4*k+3;
+	ST st(MAXN);
+	vt<gr> v(n);
 	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
+		read(z, x, y);
+		v[i]={2*(x-y), 2*(x+y), z};
 	}
-	depth[start]=0;
-	dfs1(start);
-
+	sort(all(v), [](const gr& a, const gr& b) { return a.x<b.x; });
+	deque<gr> w;
+	int ans=0;
+	FOR(n) {
+		auto [xi, yi, zi]=v[i];
+		w.push_back(v[i]);
+		st.add(max(0, yi-k), yi+1, zi);
+		while (xi-w.front().x>k) {
+			auto [xr, yr, zr]=w.front();
+			st.add(max(0, yr-k), yr+1, -zr);
+			w.pop_front();
+		}
+		umax(ans, st.query(0, MAXN));
+	}
+	print(ans);
 }

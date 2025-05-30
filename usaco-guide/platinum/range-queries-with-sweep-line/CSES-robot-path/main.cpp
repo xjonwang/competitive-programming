@@ -14,8 +14,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define vt vector
 #define eb emplace_back
 #define pb push_back
-#define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -145,71 +143,138 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
-
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
+struct ST {
+	int n;
+	vt<int> v;
+	ST(int n) : n(n), v(2*n) {}
+	void set(int i, int x) {
+		for (v[i+=n]=x; i>>=1;) {
+			v[i]=min(v[i<<1], v[i<<1|1]);
+		}
 	}
-}
-
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
-
+	int query(int l, int r) {
+		int ret=INT_MAX;
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) umin(ret, v[l++]);
+			if (r&1) umin(ret, v[--r]);
+		}
+		return ret;
 	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
+	int query(int l, int r, int x) {
+		vt<int> vl, vr;
+		int mx=INT_MAX;
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) {
+				umin(mx, v[l]);
+				vl.pb(l);
+				l++;
+			}
+			if (r&1) {
+				--r;
+				umin(mx, v[r]);
+				vr.pb(r);
+			}
+		}
+		if (mx>=x) return -1;
+		reverse(all(vr));
+		EACH(i, vl) if (v[i]<x) return walk(i, x);
+		EACH(i, vr) if (v[i]<x) return walk(i, x);
+		return -1;
+	}
+	int walk(int i, int x) {
+		while (i<n) {
+			if (v[i<<1]<x) i=i<<1;
+			else i=i<<1|1;
+		}
+		return i-n;
+	}
+};
+
+struct line {
+	int x1, y1, x2, y2, i;
+	line(int x1, int y1, int x2, int y2, int i) : x1(x1), y1(y1), x2(x2), y2(y2), i(i) {
+		if (x1>x2) swap(x1, x2);
+		if (y1>y2) swap(y1, y2);
+	}
+	void add(vt<vt<line>>& hori, vt<vt<line>>& vert1, vt<vt<line>>& vert2) {
+		if (x1==x2) {
+			vert1[y1].pb(*this);
+			vert2[y2].pb(*this);
+		} else {
+			hori[y1].pb(*this);
+		}
+	}
+};
+
+pll mv(pll st, char c, int x) {
+	switch (c) {
+		case 'U':
+			return {st.f, st.s+x};
+		case 'D':
+			return {st.f, st.s-x};
+		case 'R':
+			return {st.f+x, st.s};
+		case 'L':
+			return {st.f-x, st.s};
+		default:
+			assert(false);
 	}
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
-	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
-		}
-	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
-		}
-	}
+	int n; read(n);
+	vt<pll> p(n+1); p[0]={0, 0};
 	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
+		char c; int x; read(c, x);
+		p[i+1]=mv(p[i], c, x);
 	}
-	depth[start]=0;
-	dfs1(start);
-
+	vt<ll> xridx, yridx;
+	for (auto &[x, y] : p) xridx.pb(x), yridx.pb(y);
+	sort(all(xridx)), sort(all(yridx));
+	xridx.erase(unique(all(xridx)), xridx.end());
+	yridx.erase(unique(all(yridx)), yridx.end());
+	int mx=sz(xridx), my=sz(yridx);
+	map<int, int> xidx, yidx;
+	FOR(mx) xidx[xridx[i]]=i;
+	FOR(my) yidx[yridx[i]]=i;
+	vt<line> v;
+	vt<vt<line>> hori(my), vert1(my), vert2(my);
+	FOR(n) {
+		auto &[x1, y1]=p[i];
+		auto &[x2, y2]=p[i+1];
+		v.eb(xidx[x1], yidx[y1], xidx[x2], yidx[y2], i);
+		v.back().add(hori, vert1, vert2);
+	}
+	vt<deque<int>> win(mx);
+	ST st(mx);
+	pii inter={INT_MAX, INT_MAX};
+	FOR(my) {
+		EACH(li, vert1[i]) {
+			while (sz(win[li.x1]) && win[mx].back()>li.i) win[li.x1].pop_back();
+			win[li.x1].push_back(li.i);
+			st.set(li.x1, win[li.x1].front());	
+		}
+		EACH(li, hori[i]) {
+			int u=st.query(li.x1, li.x2+1, li.i);
+			if (u!=-1) umin(inter, {i, u});
+			else if ((u=st.query(li.x1, li.x2+1))!=INT_MAX) umin(inter, {u, i});
+		}
+		EACH(li, vert2[i]) {
+			if (win[li.x1].front()==li.i) win[li.x1].pop_front();
+			if (sz(win[li.x1])) st.set(li.x1, win[li.x1].front());	
+			else st.set(li.x1, INT_MAX);	
+		}
+	}
+	print(inter.f, inter.s);
 }
+
+/*
+5
+U 2
+R 3
+D 1
+L 5
+U 2
+*/

@@ -1,3 +1,5 @@
+#include "wall.h"
+
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -145,71 +147,83 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
-
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
-	}
-}
-
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
-
-	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
-	}
-}
-
-int main() {
-	ios::sync_with_stdio(0);
-	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
-	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
+struct ST {
+	int n, h;
+	vt<int> v, add, rem;
+	ST(int a) : n(1) {
+		while (n<a) n<<=1;
+		h=32-__builtin_clz(n);
+		add.asn(2*n, 0), rem.asn(2*n, INT_MAX), v.asn(2*n, 0);
 	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
+	void apply_add(int i, int x) {
+		if (i<n) {
+			umax(rem[i], x);
+			umax(add[i], x);
+		} else {
+			umax(v[i], x);
 		}
 	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
+	void apply_rem(int i, int x) {
+		if (i<n) {
+			umin(add[i], x);
+			umin(rem[i], x);
+		} else {
+			umin(v[i], x);
 		}
 	}
-	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
+	void push(int i) {
+		if (add[i]>0) {
+			apply_add(i<<1, add[i]);
+			apply_add(i<<1|1, add[i]);
+			add[i]=0;
+		}
+		if (rem[i]<INT_MAX) {
+			apply_rem(i<<1, rem[i]);
+			apply_rem(i<<1|1, rem[i]);
+			rem[i]=INT_MAX;
+		}
 	}
-	depth[start]=0;
-	dfs1(start);
+	void propagate(int i) {
+		FOR(j, h-1, 0, -1) {
+			push(i>>j);
+		}
+	}	
+	void set_add(int l, int r, int x) {
+		l+=n, r+=n;
+		int l0=l, r0=r-1;
+		propagate(l0), propagate(r0);
+		for (; l<r; l>>=1, r>>=1) {
+			if (l&1) apply_add(l++, x);
+			if (r&1) apply_add(--r, x);
+		}
+	}
+	void set_rem(int l, int r, int x) {
+		l+=n, r+=n;
+		int l0=l, r0=r-1;
+		propagate(l0), propagate(r0);
+		for (; l<r; l>>=1, r>>=1) {
+			if (l&1) apply_rem(l++, x);
+			if (r&1) apply_rem(--r, x);
+		}
+	}
+	int query(int i) {
+		i+=n;
+		propagate(i);
+		return v[i];
+	}
+};
 
+void buildWall(int n, int k, int op[], int left[], int right[], int height[], int finalHeight[]){
+	ST st(n);
+	FOR(k) {
+		switch (op[i]) {
+			case 1:
+				st.set_add(left[i], right[i]+1, height[i]);	
+				break;
+			case 2:
+				st.set_rem(left[i], right[i]+1, height[i]);
+				break;
+		}
+	}
+	FOR(n) finalHeight[i]=st.query(i);
 }

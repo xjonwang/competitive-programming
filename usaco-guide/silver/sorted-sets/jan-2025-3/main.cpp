@@ -6,16 +6,13 @@ using namespace std;
 #define ar array
 
 #include <ext/pb_ds/assoc_container.hpp>
-#include <ext/pb_ds/tree_policy.hpp> 
+#include <ext/pb_ds/tree_policy.hpp>
 using namespace __gnu_pbds;
 
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
-#define eb emplace_back
 #define pb push_back
-#define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -57,7 +54,6 @@ ll LASTTRUE(function<bool(ll)> f, ll lb, ll rb) {
 
 template<class A> void read(vt<A>& v);
 template<class A, size_t S> void read(ar<A, S>& a);
-template<class A, class B> void read(pair<A, B>& x);
 template<class T> void read(T& x) {
 	cin >> x;
 }
@@ -83,10 +79,6 @@ template<class A, size_t S> void read(array<A, S>& x) {
 	EACH(a, x)
 		read(a);
 }
-template<class A, class B> void read(pair<A, B>& x) {
-	cin >> x.first >> x.second;
-}
-
 
 string to_string(char c) {
 	return string(1, c);
@@ -124,9 +116,6 @@ template<class T> string to_string(T v) {
 	}
     return res;
 }
-template<class A, class B> string to_string(pair<A, B>& x) {
-	return to_string(x.first) + ' ' + to_string(x.second);
-}
 
 template<class A> void write(A x) {
 	cout << to_string(x);
@@ -145,71 +134,62 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
+int n, m, sx, sy;
 
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
-	}
-}
-
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
-
-	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
-	}
+ll dist(pll x) {
+	return abs(sx-x.f)+abs(sy-x.s)+sqrt(x.f*x.f+x.s*x.s);
 }
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
+	read(n, m, sx, sy);
 	int x, y, z;
-	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
-		}
-	}
-	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
-	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
-		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
-			}
-		}
-	}
+	vt<vt<pii>> v(m);
 	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
+		read(x, y, z);
+		v[x].pb({y, z});
 	}
-	depth[start]=0;
-	dfs1(start);
+	vt<vt<pii>> ans(2, vt<pii>(2, {sx, sy}));
+	map<int, int> a, b;
+	a[0]=0, b[0]=0, a[1e6+1]=1e6+1, b[1e6+1]=1e6+1;
+	FOR(m) {
+		for (auto &[x, y] : v[i]) {
+			auto ita=a.upper_bound(x);
+			while (ita==a.begin() && (prev(ita)->s)>=y) ita=a.erase(--ita);
+			ita=a.lower_bound(x);
+			if ((ita->s)>y) a[x]=y;
+			auto itb=b.lower_bound(x);
+			while (itb!=b.end() && (itb->s)<=y) itb=b.erase(itb);
+			itb=b.upper_bound(x);
+			if ((prev(itb)->s)<y) b[x]=y;
+		}
+		auto check0=[&](int x) {
+			auto ita=a.upper_bound(x);
+			auto itb=b.lower_bound(x);
+			return (ita->s)>=(prev(itb)->s) && (prev(itb)->s)<=sy; 
+		};
+		x=ans[0][0].f;
+		while (x>0 && !check0(x)) --x;
+		ans[0][0]={x, min(a.upper_bound(x)->s, sy)};
+		x=ans[1][0].f;
+		while (x<1e6 && !check0(x)) ++x;
+		ans[1][0]={x, min(a.upper_bound(x)->s, sy)};
 
+		auto check1=[&](int x) {
+			auto ita=a.upper_bound(x);
+			auto itb=b.lower_bound(x);
+			return (ita->s)>=(prev(itb)->s) && (ita->s)>=sy; 
+		};
+		x=ans[0][1].f;
+		while (x>0 && !check1(x)) --x;
+		ans[0][1]={x, max(prev(b.lower_bound(x))->s, sy)};
+		x=ans[1][1].f;
+		while (x<1e6 && !check1(x)) ++x;
+		ans[1][1]={x, max(prev(b.lower_bound(x))->s, sy)};
+
+		ll mans=1e9;
+		FOR(j, 2) FOR(k, 2) umin(mans, dist(ans[j][k]));
+		print(mans);
+	}
 }
