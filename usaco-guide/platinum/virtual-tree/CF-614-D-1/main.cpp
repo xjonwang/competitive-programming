@@ -188,7 +188,7 @@ int node_dist(const node& a, const node &b) {
 	return a.depth()+b.depth()-2*lca.depth();
 }
 
-#define MX 6
+#define MX 5001
 
 bool comp[MX];
 vt<int> prime;
@@ -236,6 +236,8 @@ int main() {
 	map<int, int, greater<int>> fac;
 	vt<node> g;
 	map<node, int> gcnt;
+	g.eb(fac);
+	gcnt[g.back()]=cnt[0]+cnt[1];
 	FOR(i, 2, MX) {
 		int t=i;
 		EACH(p, prime) {

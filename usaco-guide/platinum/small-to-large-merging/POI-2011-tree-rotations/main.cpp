@@ -12,7 +12,9 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
+#define rsz resize
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -142,41 +144,45 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+int n;
+vt<vt<int>> adj;
+vt<ll> dp;
+vt<oset<int>> cor;
+
+void dfs(int v) {
+	if (sz(adj[v])) {
+		FOR(2) dfs(adj[v][i]);
+		int l=adj[v][0], r=adj[v][1];
+		dp[v]=dp[l]+dp[r];
+		if (sz(cor[r])>sz(cor[l])) swap(l, r);
+		ll c1=0, c2=0;
+		EACH(x, cor[r]) c1+=cor[l].order_of_key(x);
+		c2=((ll)sz(cor[l]))*sz(cor[r])-c1;
+		dp[v]+=min(c1, c2);
+		EACH(x, cor[r]) cor[l].insert(x);
+		cor[v].swap(cor[l]);
+		cor[l].clear();
+		cor[r].clear();
+	} else {
+		dp[v]=0;
+		cor[v].insert(v);
+	}
+} 
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m; read(n, m);
-	int h=(int)2*ceil(sqrt(n));
-	vt<int> v(n); read(v);
-	vt<pii> jump(n);
-	FOR(i, n-1, -1, -1) {
-		if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-		else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
+	read(n);
+	adj.rsz(2*n-1), dp.rsz(2*n-1), cor.rsz(2*n-1);
+	stack<int> st;
+	int cnt=0;
+	FOR(2*n-1) {
+		int x; read(x);
+		x=x ? x+n-2 : cnt++;
+		if (sz(st)) adj[st.top()].pb(x);
+		st.push(x);
+		while (sz(st) && (st.top()>=n-1 || sz(adj[st.top()])>=2)) st.pop();
 	}
-	FOR(_, m) {
-		int x, y; read(x);
-		switch (x) {
-			case 0:
-				read(x, y); --x;
-				v[x]=y;
-				FOR(i, x, x/h*h-1, -1) {
-					if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-					else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-				}
-				break;
-			case 1:
-				read(x); --x;
-				int cnt=0;
-				while (x+v[x]<n) {
-					cnt+=jump[x].f;
-					x=jump[x].s;
-					if (x+v[x]<n) {
-						cnt++;
-						x+=v[x];
-					}
-				}
-				print(x+1, cnt+1);
-				break;
-		}
-	}
+	dfs(0);
+	print(dp[0]);
 }

@@ -1,3 +1,5 @@
+#include "cave.h"
+
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -12,7 +14,12 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
+#define rsz resize
+#define asn assign
+#define fr front()
+#define bk back()
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -111,15 +118,15 @@ template<size_t S> string to_string(bitset<S> b) {
 	return res;
 }
 template<class T> string to_string(T v) {
-    bool f=1;
-    string res;
-    EACH(x, v) {
+	bool f=1;
+	string res;
+	EACH(x, v) {
 		if(!f)
 			res+=' ';
 		f=0;
 		res+=to_string(x);
 	}
-    return res;
+	return res;
 }
 template<class A, class B> string to_string(pair<A, B>& x) {
 	return to_string(x.first) + ' ' + to_string(x.second);
@@ -142,41 +149,31 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int main() {
-	ios::sync_with_stdio(0);
-	cin.tie(0);
-	int n, m; read(n, m);
-	int h=(int)2*ceil(sqrt(n));
-	vt<int> v(n); read(v);
-	vt<pii> jump(n);
-	FOR(i, n-1, -1, -1) {
-		if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-		else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-	}
-	FOR(_, m) {
-		int x, y; read(x);
-		switch (x) {
-			case 0:
-				read(x, y); --x;
-				v[x]=y;
-				FOR(i, x, x/h*h-1, -1) {
-					if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-					else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-				}
-				break;
-			case 1:
-				read(x); --x;
-				int cnt=0;
-				while (x+v[x]<n) {
-					cnt+=jump[x].f;
-					x=jump[x].s;
-					if (x+v[x]<n) {
-						cnt++;
-						x+=v[x];
-					}
-				}
-				print(x+1, cnt+1);
-				break;
-		}
-	}
+#define MAX_N 5000
+#define MAX_CALLS 70000
+
+static int S[MAX_N];
+static int D[MAX_N];
+
+void exploreCave(int n) {
+    vt<pii> ans;
+    vt<bool> vis(n, 0);
+    FOR(n) {
+        FOR(j, n) if (!vis[j]) S[j]=0;
+        int fill=tryCombination(S)==i ? 1 : 0;
+		int afill=-1*fill+1;
+        int l=0, r=n-1;
+        while (l<r) {
+        	FOR(j, n) if (!vis[j]) S[j]=afill;
+            int m=(l+r+1)/2;
+            FOR(j, l, m) if (!vis[j]) S[j]=fill;
+            if (tryCombination(S)==i) l=m;
+            else r=m-1;
+        }
+        ans.pb({l, fill});
+        vis[l]=1;
+        S[l]=fill;
+    }
+    FOR(n) D[ans[i].f]=i;
+    answer(S, D);
 }

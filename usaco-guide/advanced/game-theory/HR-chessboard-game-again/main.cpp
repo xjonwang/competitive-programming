@@ -12,7 +12,11 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
+#define rsz resize
+#define fr front()
+#define bk back()
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -111,15 +115,15 @@ template<size_t S> string to_string(bitset<S> b) {
 	return res;
 }
 template<class T> string to_string(T v) {
-    bool f=1;
-    string res;
-    EACH(x, v) {
+	bool f=1;
+	string res;
+	EACH(x, v) {
 		if(!f)
 			res+=' ';
 		f=0;
 		res+=to_string(x);
 	}
-    return res;
+	return res;
 }
 template<class A, class B> string to_string(pair<A, B>& x) {
 	return to_string(x.first) + ' ' + to_string(x.second);
@@ -142,41 +146,51 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+#define MX 15
+#define MV 4
+
+int dp[MX][MX], dr[4]={-2, -2, -1, 1}, dc[4]={1, -1, -2, -2};
+
+void solve() {
+	int n; read(n);
+	int x=0;
+	FOR(n) {
+		int r, c; read(r, c);
+		x^=dp[--r][--c];
+	}
+	print(x ? "First" : "Second");
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m; read(n, m);
-	int h=(int)2*ceil(sqrt(n));
-	vt<int> v(n); read(v);
-	vt<pii> jump(n);
-	FOR(i, n-1, -1, -1) {
-		if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-		else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-	}
-	FOR(_, m) {
-		int x, y; read(x);
-		switch (x) {
-			case 0:
-				read(x, y); --x;
-				v[x]=y;
-				FOR(i, x, x/h*h-1, -1) {
-					if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-					else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-				}
-				break;
-			case 1:
-				read(x); --x;
-				int cnt=0;
-				while (x+v[x]<n) {
-					cnt+=jump[x].f;
-					x=jump[x].s;
-					if (x+v[x]<n) {
-						cnt++;
-						x+=v[x];
-					}
-				}
-				print(x+1, cnt+1);
-				break;
+	int r, c;
+	auto fun=[&]() {
+		vt<bool> b(MV+1, 0);
+		FOR(k, MV) {
+			int r1=r+dr[k], c1=c+dc[k];
+			if (r1>=0 && r1<MX && c1>=0 && c1<MX) b[dp[r1][c1]]=1;
+		}
+		int k=0;
+		for (; b[k]; k++);
+		dp[r][c]=k;
+	};
+	FOR(i, MX) {
+		FOR(j, i+1) {
+			r=i-j, c=j;
+			fun();
 		}
 	}
+	FOR(MX) {
+		r=i, c=MX-1-i;
+		fun();
+	}
+	FOR(i, MX-1, -1, -1) {
+		FOR(j, MX-i, MX) {
+			r=2*MX-1-i-j, c=j;
+			fun();
+		}
+	}
+	int t; read(t);
+	FOR(t) solve();
 }

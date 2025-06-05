@@ -1,3 +1,5 @@
+#include "combo.h"
+
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -12,7 +14,12 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
+#define rsz resize
+#define asn assign
+#define fr front()
+#define bk back()
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -111,15 +118,15 @@ template<size_t S> string to_string(bitset<S> b) {
 	return res;
 }
 template<class T> string to_string(T v) {
-    bool f=1;
-    string res;
-    EACH(x, v) {
+	bool f=1;
+	string res;
+	EACH(x, v) {
 		if(!f)
 			res+=' ';
 		f=0;
 		res+=to_string(x);
 	}
-    return res;
+	return res;
 }
 template<class A, class B> string to_string(pair<A, B>& x) {
 	return to_string(x.first) + ' ' + to_string(x.second);
@@ -142,41 +149,26 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-int main() {
-	ios::sync_with_stdio(0);
-	cin.tie(0);
-	int n, m; read(n, m);
-	int h=(int)2*ceil(sqrt(n));
-	vt<int> v(n); read(v);
-	vt<pii> jump(n);
-	FOR(i, n-1, -1, -1) {
-		if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-		else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
+string guess_sequence(int n) {
+	string ans;
+	if (press("AB")) {
+		if (press("A")) ans+="A";
+		else ans+="B";
+	} else {
+		if (press("X")) ans+="X";
+		else ans+="Y";
 	}
-	FOR(_, m) {
-		int x, y; read(x);
-		switch (x) {
-			case 0:
-				read(x, y); --x;
-				v[x]=y;
-				FOR(i, x, x/h*h-1, -1) {
-					if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-					else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-				}
-				break;
-			case 1:
-				read(x); --x;
-				int cnt=0;
-				while (x+v[x]<n) {
-					cnt+=jump[x].f;
-					x=jump[x].s;
-					if (x+v[x]<n) {
-						cnt++;
-						x+=v[x];
-					}
-				}
-				print(x+1, cnt+1);
-				break;
-		}
+	if (n==1) return ans;
+	vt<string> suf={"A", "B", "X", "Y"};
+	suf.erase(find(all(suf), ans));
+	FOR(i, 1, n-1) {
+		string t;
+		FOR(j, 3) t+=ans+suf[2]+suf[j];
+		t+=ans+suf[1];
+		ans+=suf[press(t)-i];
 	}
+	if (press(ans+suf[0])==n) ans+=suf[0];
+	else if (press(ans+suf[1])==n) ans+=suf[1];
+	else ans+=suf[2];
+	return ans;
 }

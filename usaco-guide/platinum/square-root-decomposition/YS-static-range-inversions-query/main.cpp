@@ -12,7 +12,9 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
+#define rsz resize
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -142,23 +144,73 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+template<typename T> struct BIT {
+	int N; vt<T> data;
+	void init(int _N) { N = _N; data.rsz(N); }
+	void add(int p, T x) { for (++p;p<=N;p+=p&-p) data[p-1] += x; }
+	T sum(int l, int r) { return sum(r+1)-sum(l); }
+	T sum(int r) { T s = 0; for(;r;r-=r&-r)s+=data[r-1]; return s; }
+	int lower_bound(T sum) {
+		if (sum <= 0) return -1;
+		int pos = 0;
+		for (int pw = 1<<25; pw; pw >>= 1) {
+			int npos = pos+pw;
+			if (npos <= N && data[npos-1] < sum)
+				pos = npos, sum -= data[pos-1];
+		}
+		return pos;
+	}
+};
+
+struct query {
+	int l, r, i;
+};
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, a, b; read(n, m);
-	a=ceil(sqrt(n));
-	b=ceil((double)n/a);
+	int n, m; read(n, m);
+	int h=ceil(sqrt(n));
 	vt<int> v(n); read(v);
-	vt<vt<int>> front(n), back(n);
-	FOR(b) {
-		back[i*a]={v[i*a]};
-		FOR(j, 1, a) {
-			back[i*a+j].resize(j+1);
-			int k=0;
-			for (; k<j && back[i*a+j-1][k]<=v[i*a+j]; k++) back[i*a+j][k]=back[i*a+j-1][k];
-			back[i*a+j][k]=v[i*a+j];
-			for (; k<j; k++) back[i*a+j][k+1]=back[i*a+j-1][k];
-		}
-		front[i*a+b-1]={v[i*a+b-1]};
+	vt<int> ridx=v;
+	sort(all(ridx));
+	ridx.erase(unique(all(ridx)), ridx.end());
+	EACH(x, v) x=lower_bound(all(ridx), x)-ridx.begin();
+	BIT<int> bit; bit.init(n);
+	ll ans=0;
+	auto add_left=[&](int i) {
+		ans+=bit.sum(v[i]);
+		bit.add(v[i], 1);
+	};
+	auto add_right=[&](int i) {
+		ans+=bit.sum(v[i]+1, n-1);
+		bit.add(v[i], 1);
+	};
+	auto remove_left=[&](int i) {
+		ans-=bit.sum(v[i]);
+		bit.add(v[i], -1);
+	};
+	auto remove_right=[&](int i) {
+		ans-=bit.sum(v[i]+1, n-1);
+		bit.add(v[i], -1);
+	};
+	vt<query> q(m);
+	FOR(m) {
+		int x, y; read(x, y);
+		q[i]={x, --y, i};
 	}
+	sort(all(q), [&](const query& a, const query& b) {
+		int ba=a.l/h, bb=b.l/h;
+		return ba!=bb ? ba<bb : a.r<b.r;
+	});
+	vt<ll> a(m);
+	int ml=0, mr=-1;
+	for (auto &[l, r, i] : q) {
+		while (ml<l) remove_left(ml++);
+		while (ml>l) add_left(--ml);
+		while (mr>r) remove_right(mr--);
+		while (mr<r) add_right(++mr);
+		a[i]=ans;
+	}
+	EACH(x, a) print(x);
 }

@@ -12,7 +12,10 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
+#define rsz resize
+#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -142,41 +145,91 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+struct ST {
+	int n;
+	vt<int> v;
+	ST(int n) : n(n), v(2*n, 1) {}
+	void set(int l, int r) {
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) v[l++]=0;
+			if (r&1) v[--r]=0;
+		}
+	}
+	int query(int i) {
+		for (i+=n; i>0; i>>=1) {
+			if (v[i]==0) return 0;
+		}
+		return 1;
+	}
+};
+
+#define MAX_N 100000
+
+vt<vt<int>> adj;
+int timer;
+vt<int> tin, tout, d;
+int up[MAX_N][17];
+
+void dfs(int v, int p=-1) {
+	tin[v]=timer++;
+	up[v][0]=p;
+	EACH(u, adj[v]) {
+		if (u==p) continue;
+		d[u]=d[v]+1;
+		dfs(u, v);
+	}
+	tout[v]=timer;
+}
+int lift(int x, int k) {
+	FOR(17) if (x!=-1 && k&(1<<i)) x=up[x][i];
+	return x; 
+}
+int lca(int a, int b) {
+	a=lift(a, d[a]-min(d[a], d[b]));
+	b=lift(b, d[b]-min(d[a], d[b]));
+	if (a==b) return a;
+	FOR(i, 16, -1, -1) if (up[a][i]!=up[b][i]) a=up[a][i], b=up[b][i];
+	return up[a][0];
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
+	freopen("gathering.in", "r", stdin);
+	freopen("gathering.out", "w", stdout);
 	int n, m; read(n, m);
-	int h=(int)2*ceil(sqrt(n));
-	vt<int> v(n); read(v);
-	vt<pii> jump(n);
-	FOR(i, n-1, -1, -1) {
-		if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-		else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
+	adj.rsz(n), tin.rsz(n), tout.rsz(n), d.rsz(n);
+	FOR(n-1) {
+		int x, y; read(x, y); --x, --y;
+		adj[x].pb(y), adj[y].pb(x);
 	}
-	FOR(_, m) {
-		int x, y; read(x);
-		switch (x) {
-			case 0:
-				read(x, y); --x;
-				v[x]=y;
-				FOR(i, x, x/h*h-1, -1) {
-					if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-					else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-				}
-				break;
-			case 1:
-				read(x); --x;
-				int cnt=0;
-				while (x+v[x]<n) {
-					cnt+=jump[x].f;
-					x=jump[x].s;
-					if (x+v[x]<n) {
-						cnt++;
-						x+=v[x];
-					}
-				}
-				print(x+1, cnt+1);
-				break;
+	d[0]=0;
+	dfs(0);
+	FOR(i, 1, 17) FOR(j, n) up[j][i]=up[j][i-1]!=-1 ? up[up[j][i-1]][i-1] : -1;
+	ST st(n);
+	vt<vt<int>> tadj(n);
+	vt<int> in(n);
+	FOR(m) {
+		int x, y; read(x, y); --x, --y;
+		tadj[x].pb(y), in[y]++;
+		if (lca(x, y)==x) {
+			x=lift(y, d[y]-d[x]-1);
+			st.set(0, tin[x]), st.set(tout[x], n);
+		} else {
+			st.set(tin[x], tout[x]);
 		}
+	}
+	queue<int> q;
+	FOR(n) if (in[i]==0) q.push(i);
+	int tcnt=0;
+	while (sz(q)) {
+		int v=q.front(); q.pop();
+		tcnt++;
+		EACH(u, tadj[v]) if (--in[u]==0) q.push(u);
+	}
+	if (tcnt<n) {
+		FOR(n) print(0);
+	} else {
+		FOR(n) print(st.query(tin[i]));
 	}
 }

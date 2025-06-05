@@ -12,7 +12,11 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
+#define rsz resize
+#define fr front()
+#define bk back()
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -111,15 +115,15 @@ template<size_t S> string to_string(bitset<S> b) {
 	return res;
 }
 template<class T> string to_string(T v) {
-    bool f=1;
-    string res;
-    EACH(x, v) {
+	bool f=1;
+	string res;
+	EACH(x, v) {
 		if(!f)
 			res+=' ';
 		f=0;
 		res+=to_string(x);
 	}
-    return res;
+	return res;
 }
 template<class A, class B> string to_string(pair<A, B>& x) {
 	return to_string(x.first) + ' ' + to_string(x.second);
@@ -142,41 +146,39 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+vt<vt<int>> adj;
+vt<bool> d;
+
+void dfs(int v) {
+	d[v]=1;
+	EACH(u, adj[v]) dfs(u), d[v]=!d[u];
+}
+
+ll nc2(ll x) {
+	return x*(x-1)/2;
+}
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m; read(n, m);
-	int h=(int)2*ceil(sqrt(n));
+	int n; read(n);
 	vt<int> v(n); read(v);
-	vt<pii> jump(n);
-	FOR(i, n-1, -1, -1) {
-		if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-		else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
+	adj.rsz(n), d.rsz(n);
+	FOR(i, 1, n) {
+		int x; read(x);
+		adj[--x].pb(i);
 	}
-	FOR(_, m) {
-		int x, y; read(x);
-		switch (x) {
-			case 0:
-				read(x, y); --x;
-				v[x]=y;
-				FOR(i, x, x/h*h-1, -1) {
-					if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-					else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-				}
-				break;
-			case 1:
-				read(x); --x;
-				int cnt=0;
-				while (x+v[x]<n) {
-					cnt+=jump[x].f;
-					x=jump[x].s;
-					if (x+v[x]<n) {
-						cnt++;
-						x+=v[x];
-					}
-				}
-				print(x+1, cnt+1);
-				break;
-		}
+	dfs(0);
+	int x=0;
+	ll c1=0, c2=0;
+	FOR(n) {
+		c1+=d[i], c2+=!d[i];
+		if (d[i]) x^=v[i];
 	}
+	ll ans=0;
+	if (x==0) ans+=nc2(c1)+nc2(c2);
+	map<int, int> cnt;
+	FOR(n) if (d[i]) cnt[x^v[i]]++;
+	FOR(n) if (!d[i]) ans+=cnt[v[i]];
+	print(ans);
 }

@@ -12,7 +12,9 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
+#define rsz resize
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -142,41 +144,67 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+ll nc2(ll x) {
+	return x*(x-1)/2;
+}
+
+struct DSU {
+	ll cnt;
+	vt<int> e;
+	vt<unordered_set<int>> in, incc, outcc;
+	DSU(int n) : cnt(0), e(n, -1), in(n), incc(n), outcc(n) {
+		FOR(n) in[i].insert(i);
+	}
+	int get(int x) { return e[x]<0 ? x : e[x]=get(e[x]); }
+	int size(int x) { return e[x]<0 ? -1*e[x] : size(e[x]); }
+	ll value(int x) {
+		x=get(x);
+		return 2*nc2(size(x))+1ll*(sz(in[x])-size(x))*size(x);
+	}
+	void unite(int x, int y) {
+		x=get(x), y=get(y);
+		if (x==y) return;
+		cnt-=value(x)+value(y);
+		if (e[x]>e[y]) swap(x, y);
+		e[x]+=e[y];
+		e[y]=x;
+		unordered_set<int> q;
+		EACH(u, incc[y]) {
+			outcc[u].erase(y), outcc[u].insert(x), incc[x].insert(u);
+			if (outcc[x].count(u)) q.insert(u);
+		}
+		EACH(u, outcc[y]) {
+			incc[u].erase(y), incc[u].insert(x), outcc[x].insert(u);
+			if (incc[x].count(u)) q.insert(u);
+		}
+		incc[y].clear();
+		outcc[y].clear();
+		if (sz(in[x])<sz(in[y])) swap(in[x], in[y]);
+		in[x].insert(all(in[y]));
+		cnt+=value(x);
+		EACH(u, q) unite(u, x);
+	}
+	void ae(int x, int y) {
+		int cx=get(x), cy=get(y);
+		if (cx==cy) return;
+		if (incc[cx].count(cy)) {
+			unite(cx, cy);
+		} else {
+			cnt-=value(cy);
+			in[y].insert(x), incc[cy].insert(cx), outcc[cx].insert(cy);
+			cnt+=value(cy);
+		}
+	}
+};
+
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
 	int n, m; read(n, m);
-	int h=(int)2*ceil(sqrt(n));
-	vt<int> v(n); read(v);
-	vt<pii> jump(n);
-	FOR(i, n-1, -1, -1) {
-		if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-		else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-	}
-	FOR(_, m) {
-		int x, y; read(x);
-		switch (x) {
-			case 0:
-				read(x, y); --x;
-				v[x]=y;
-				FOR(i, x, x/h*h-1, -1) {
-					if (i+v[i]>=n || ((i+v[i])/h)>(i/h)) jump[i]={0, i};
-					else jump[i]={jump[i+v[i]].f+1, jump[i+v[i]].s};
-				}
-				break;
-			case 1:
-				read(x); --x;
-				int cnt=0;
-				while (x+v[x]<n) {
-					cnt+=jump[x].f;
-					x=jump[x].s;
-					if (x+v[x]<n) {
-						cnt++;
-						x+=v[x];
-					}
-				}
-				print(x+1, cnt+1);
-				break;
-		}
+	DSU dsu(n);
+	FOR(m) {
+		int x, y; read(x, y);
+		dsu.ae(--x, --y);
+		print(dsu.cnt);
 	}
 }
