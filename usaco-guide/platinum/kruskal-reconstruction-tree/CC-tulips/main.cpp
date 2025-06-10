@@ -1,5 +1,3 @@
-#include "swap.h"
-
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -148,87 +146,153 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 }
 
 struct KRT {
-	int n, m, h;
-	vt<bool> sw;
-	vt<int> dsu, w, depth;
+	int n, h, timer;
+	vt<int> dsu, w, tin, tout;
 	vt<vt<int>> adj, up;
-	void init(int a_n, int a_m) {
-		n=h=a_n;
-		m=a_m;
-		dsu.rsz(n+m), adj.rsz(n+m), up.asn(n+m, vt<int>(19, -1)), w.rsz(n+m), sw.asn(n+m, 0), depth.rsz(n+m);
+	KRT(int n) : n(n), h(n), timer(0), dsu(2*n-1), adj(2*n-1), w(2*n-1, 0), up(2*n-1, vt<int>(18, -1)), tin(2*n-1), tout(2*n-1) {
 		iota(dsu.begin(), dsu.begin()+n, 0);
 	}
 	int get(int u) {
 		return u==dsu[u] ? u : dsu[u]=get(dsu[u]);
 	}
-	void ae(int u, int v, int i, bool deg3) {
+	void ae(int u, int v, int i) {
 		u=get(u), v=get(v);
-		if (u==v) {
-			dsu[h]=dsu[u]=h;
-			adj[h].pb(u);
-			up[u][0]=h;
-			w[h]=i;
-			sw[h]=1;
-			h++;
-		} else {
-			dsu[h]=dsu[u]=dsu[v]=h;
-			adj[h].pb(u), adj[h].pb(v);
-			up[u][0]=up[v][0]=h;
-			w[h]=i;
-			sw[h]=sw[u]||sw[v]||deg3;
-			h++;
-		}
+		if (u==v) return;
+		dsu[h]=h;
+		dsu[u]=dsu[v]=h;
+		adj[h].pb(u), adj[h].pb(v);
+		up[u][0]=h, up[v][0]=h;
+		w[h]=i;
+		h++;
 	}
 	void dfs(int v) {
-		EACH(u, adj[v]) {
-			depth[u]=depth[v]+1;
-			dfs(u);
-		}
+		tin[v]=timer++;
+		EACH(u, adj[v]) dfs(u);
+		tout[v]=timer;
 	}
 	void gen() {
-		FOR(j, 1, 19) FOR(i, n+m) if (up[i][j-1]!=-1) up[i][j]=up[up[i][j-1]][j-1];
-		depth[n+m-1]=0; dfs(n+m-1);
+		FOR(j, 1, 18) FOR(i, 2*n-1) up[i][j]=up[i][j-1]!=-1 ? up[up[i][j-1]][j-1] : -1; 
+		dfs(2*n-2);
+		oset<int> os;
+		FOR(n) os.insert(tin[i]);
+		FOR(2*n-1) tin[i]=os.order_of_key(tin[i]), tout[i]=os.order_of_key(tout[i]);
 	}
-	int lift(int x, int k) {
-		FOR(19) if (k&(1<<i)) x=up[x][i];
-		return x;
+	int trav(int u, int k) {
+		FOR(i, 17, -1, -1) if (up[u][i]!=-1 && w[up[u][i]]<=k) u=up[u][i];
+		return u;
 	}
-	int lca(int a, int b) {
-		a=lift(a, depth[a]-min(depth[a], depth[b]));
-		b=lift(b, depth[b]-min(depth[a], depth[b]));
-		if (a==b) return a;
-		FOR(i, 18, -1, -1) if (up[a][i]!=up[b][i]) a=up[a][i], b=up[b][i];
-		return up[a][0];
+};
+
+struct ST {
+	int n, h;
+	vt<int> mi, mif, d;
+	ST(int n) : n(n), h(32-__builtin_clz(n)), mi(2*n, 0), mif(2*n, 0), d(n, 0) {
+		FOR(i, n, 2*n) mif[i]=1;
+		FOR(i, n-1, 0, -1) mif[i]=mif[i<<1]+mif[i<<1|1];
 	}
-	int trav(int u) {
-		if (sw[u]) return u;
-		FOR(i, 18, -1, -1) if (up[u][i]!=-1 && !sw[up[u][i]]) u=up[u][i];
-		return up[u][0];
+	void apply(int i, int x) {
+		mi[i]+=x;
+		if (i<n) d[i]+=x;
 	}
-	int query(int a, int b) {
-		int c=lca(a, b);
-		c=trav(c);
-		return c!=-1 ? w[c] : -1;
+	void push(int i) {
+		if (d[i]) {
+			apply(i<<1, d[i]);
+			apply(i<<1|1, d[i]);
+			d[i]=0;
+		}
+	}
+	void propagate(int i) {
+		FOR(j, h, 0, -1) {
+			push(i>>j);
+		}
+	}
+	void build(int i) {
+		for (; i>>=1; ) {
+			mi[i]=min(mi[i<<1], mi[i<<1|1]);
+			if (mi[i<<1]<mi[i<<1|1]) mif[i]=mif[i<<1];
+			else if (mi[i<<1]>mi[i<<1|1]) mif[i]=mif[i<<1|1];
+			else mif[i]=mif[i<<1]+mif[i<<1|1];
+			if (d[i]) mi[i]+=d[i];
+		}
+	}
+	void add(int l, int r, int x) {
+		l+=n, r+=n;
+		int l0=l, r0=r-1;
+		propagate(l0), propagate(r0);
+		for (; l<r; l>>=1, r>>=1) {
+			if (l&1) apply(l++, x);
+			if (r&1) apply(--r, x);
+		}
+		build(l0), build(r0);
+	}
+	int value(int i) {
+		return mi[i]==0 ? mif[i] : 0;
+	}
+	int query(int l, int r) {
+		l+=n, r+=n;
+		propagate(l), propagate(r-1);
+		int ret=0;
+		for (; l<r; l>>=1, r>>=1) {
+			if (l&1) ret+=value(l++);
+			if (r&1) ret+=value(--r);
+		}
+		return ret;
 	}
 };
 
 struct edge {
 	int u, v, w;
 };
+struct query {
+	int t, l, r;
+};
 
-KRT krt;
-
-void init(int n, int m,
-          std::vector<int> U, std::vector<int> V, std::vector<int> W) {
-	krt.init(n, m);
-	vt<edge> e(m);
-	FOR(m) e[i]={U[i], V[i], W[i]};
+void solve() {
+	int n; read(n);
+	vt<edge> e(n-1);
+	FOR(n-1) {
+		int x, y, z; read(x, y, z);
+		e[i]={--x, --y, z};
+	}
 	sort(all(e), [](const edge& a, const edge& b) { return a.w<b.w; });
-	vt<int> deg(n, 0);
-	for (auto &[u, v, w] : e) krt.ae(u, v, w, (++deg[u]>=3 || ++deg[v]>=3));
+	KRT krt(n);
+	for (auto &[u, v, w] : e) krt.ae(u, v, w);
 	krt.gen();
+	int m, k; read(m, k);
+	ST st(n);
+	queue<query> q;
+	FOR(m) {
+		int x, y, z; read(x, y, z);
+		y=krt.trav(--y, z);
+		while (sz(q) && q.front().t<=x) {
+			auto [_, l, r]=q.front(); q.pop();
+			st.add(l, r, -1);
+		}
+		print(st.query(krt.tin[y], krt.tout[y]));
+		st.add(krt.tin[y], krt.tout[y], 1);
+		q.push({x+k, krt.tin[y], krt.tout[y]});
+	}
 }
 
-int getMinimumFuelCapacity(int x, int y) {
-	return krt.query(x, y);
+int main() {
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	int t; read(t);
+	FOR(t) solve();
 }
+
+/*
+1
+5
+1 2 1
+4 5 2
+1 5 3
+2 3 4
+6 10
+1 2 4
+10 4 4
+20 1 0
+21 2 1
+22 5 2
+23 4 4
+*/

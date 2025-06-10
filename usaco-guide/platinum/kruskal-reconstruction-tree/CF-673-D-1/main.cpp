@@ -1,5 +1,3 @@
-#include "swap.h"
-
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -16,8 +14,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define vt vector
 #define eb emplace_back
 #define pb push_back
-#define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -147,88 +143,113 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+struct ST {
+	int n;
+	vt<int> ma, mai;
+	ST(int n, const vt<int>& v) : n(n), ma(2*n), mai(2*n) {
+		FOR(n) ma[i+n]=v[i], mai[i+n]=i;
+		FOR(i, n-1, 0, -1) {
+			ma[i]=max(ma[i<<1], ma[i<<1|1]);
+			mai[i]=ma[i<<1]>ma[i<<1|1] ? mai[i<<1] : mai[i<<1|1];
+		}
+	}
+	void set(int i, int x) {
+		for (ma[i+=n]=x; i>>=1; ) {
+			ma[i]=max(ma[i<<1], ma[i<<1|1]);
+			mai[i]=ma[i<<1]>ma[i<<1|1] ? mai[i<<1] : mai[i<<1|1];
+		}
+	}
+	pii query(int l, int r) {
+		int val=-1, idx=-1;
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) {
+				if (umax(val, ma[l])) idx=mai[l];
+				l++;
+			}
+			if (r&1) {
+				--r;
+				if (umax(val, ma[r])) idx=mai[r];
+			}
+		}
+		return {val, idx};
+	}
+};
+
 struct KRT {
-	int n, m, h;
-	vt<bool> sw;
-	vt<int> dsu, w, depth;
-	vt<vt<int>> adj, up;
-	void init(int a_n, int a_m) {
-		n=h=a_n;
-		m=a_m;
-		dsu.rsz(n+m), adj.rsz(n+m), up.asn(n+m, vt<int>(19, -1)), w.rsz(n+m), sw.asn(n+m, 0), depth.rsz(n+m);
+	int n, h, timer;
+	vt<int> dsu, tin, tout;
+	vt<vt<int>> adj;
+	vt<bool> vis;
+	KRT(int n) : n(n), h(n), timer(0), dsu(2*n-1), adj(2*n-1), vis(2*n-1, 0), tin(2*n-1), tout(2*n-1) {
 		iota(dsu.begin(), dsu.begin()+n, 0);
 	}
 	int get(int u) {
 		return u==dsu[u] ? u : dsu[u]=get(dsu[u]);
 	}
-	void ae(int u, int v, int i, bool deg3) {
+	void ae(int u, int v) {
 		u=get(u), v=get(v);
-		if (u==v) {
-			dsu[h]=dsu[u]=h;
-			adj[h].pb(u);
-			up[u][0]=h;
-			w[h]=i;
-			sw[h]=1;
-			h++;
-		} else {
-			dsu[h]=dsu[u]=dsu[v]=h;
-			adj[h].pb(u), adj[h].pb(v);
-			up[u][0]=up[v][0]=h;
-			w[h]=i;
-			sw[h]=sw[u]||sw[v]||deg3;
-			h++;
-		}
-	}
-	void dfs(int v) {
-		EACH(u, adj[v]) {
-			depth[u]=depth[v]+1;
-			dfs(u);
-		}
+		if (u==v) return;
+		dsu[h]=h;
+		dsu[u]=dsu[v]=h;
+		adj[h].pb(u), adj[h].pb(v);
+		h++;
 	}
 	void gen() {
-		FOR(j, 1, 19) FOR(i, n+m) if (up[i][j-1]!=-1) up[i][j]=up[up[i][j-1]][j-1];
-		depth[n+m-1]=0; dfs(n+m-1);
+		FOR(i, 2*n-2, -1, -1) if (!vis[i]) dfs(i);
 	}
-	int lift(int x, int k) {
-		FOR(19) if (k&(1<<i)) x=up[x][i];
-		return x;
-	}
-	int lca(int a, int b) {
-		a=lift(a, depth[a]-min(depth[a], depth[b]));
-		b=lift(b, depth[b]-min(depth[a], depth[b]));
-		if (a==b) return a;
-		FOR(i, 18, -1, -1) if (up[a][i]!=up[b][i]) a=up[a][i], b=up[b][i];
-		return up[a][0];
-	}
-	int trav(int u) {
-		if (sw[u]) return u;
-		FOR(i, 18, -1, -1) if (up[u][i]!=-1 && !sw[up[u][i]]) u=up[u][i];
-		return up[u][0];
-	}
-	int query(int a, int b) {
-		int c=lca(a, b);
-		c=trav(c);
-		return c!=-1 ? w[c] : -1;
+	void dfs(int v) {
+		vis[v]=1;
+		tin[v]=timer++;
+		EACH(u, adj[v]) dfs(u);
+		tout[v]=timer;
 	}
 };
 
 struct edge {
-	int u, v, w;
+	int u, v;
+	bool del;	
 };
 
-KRT krt;
-
-void init(int n, int m,
-          std::vector<int> U, std::vector<int> V, std::vector<int> W) {
-	krt.init(n, m);
+int main() {
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	int n, m, q; read(n, m, q);
+	vt<int> a(n); read(a);
 	vt<edge> e(m);
-	FOR(m) e[i]={U[i], V[i], W[i]};
-	sort(all(e), [](const edge& a, const edge& b) { return a.w<b.w; });
-	vt<int> deg(n, 0);
-	for (auto &[u, v, w] : e) krt.ae(u, v, w, (++deg[u]>=3 || ++deg[v]>=3));
+	FOR(m) {
+		int x, y; read(x, y);
+		e[i]={--x, --y, 0};
+	}
+	vt<pii> v(q);
+	FOR(q) {
+		int x, y; read(x, y); --y;
+		if (x==2) e[y].del=1;
+		v[i]={x, y};
+	}
+	KRT krt(n);
+	FOR(m) if (!e[i].del) krt.ae(e[i].u, e[i].v);
+	vt<int> lca;
+	reverse(all(v));
+	for (auto &[c, x] : v) {
+		switch (c) {
+			case 1:
+				lca.pb(krt.get(x));
+				break;
+			case 2:
+				krt.ae(e[x].u, e[x].v);
+				break;
+		}
+	}
 	krt.gen();
-}
-
-int getMinimumFuelCapacity(int x, int y) {
-	return krt.query(x, y);
+	vt<int> pa(2*n-1, 0);
+	FOR(n) pa[krt.tin[i]]=a[i];
+	ST st(2*n-1, pa);
+	vt<int> ans;
+	reverse(all(lca));
+	EACH(a, lca) {
+		auto [val, idx]=st.query(krt.tin[a], krt.tout[a]);
+		ans.pb(val);
+		st.set(idx, 0);
+	}
+	EACH(a, ans) print(a);
 }

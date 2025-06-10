@@ -1,5 +1,3 @@
-#include "swap.h"
-
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -147,88 +145,46 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct KRT {
-	int n, m, h;
-	vt<bool> sw;
-	vt<int> dsu, w, depth;
-	vt<vt<int>> adj, up;
-	void init(int a_n, int a_m) {
-		n=h=a_n;
-		m=a_m;
-		dsu.rsz(n+m), adj.rsz(n+m), up.asn(n+m, vt<int>(19, -1)), w.rsz(n+m), sw.asn(n+m, 0), depth.rsz(n+m);
-		iota(dsu.begin(), dsu.begin()+n, 0);
-	}
-	int get(int u) {
-		return u==dsu[u] ? u : dsu[u]=get(dsu[u]);
-	}
-	void ae(int u, int v, int i, bool deg3) {
-		u=get(u), v=get(v);
-		if (u==v) {
-			dsu[h]=dsu[u]=h;
-			adj[h].pb(u);
-			up[u][0]=h;
-			w[h]=i;
-			sw[h]=1;
-			h++;
-		} else {
-			dsu[h]=dsu[u]=dsu[v]=h;
-			adj[h].pb(u), adj[h].pb(v);
-			up[u][0]=up[v][0]=h;
-			w[h]=i;
-			sw[h]=sw[u]||sw[v]||deg3;
-			h++;
-		}
-	}
-	void dfs(int v) {
-		EACH(u, adj[v]) {
-			depth[u]=depth[v]+1;
-			dfs(u);
-		}
-	}
-	void gen() {
-		FOR(j, 1, 19) FOR(i, n+m) if (up[i][j-1]!=-1) up[i][j]=up[up[i][j-1]][j-1];
-		depth[n+m-1]=0; dfs(n+m-1);
-	}
-	int lift(int x, int k) {
-		FOR(19) if (k&(1<<i)) x=up[x][i];
-		return x;
-	}
-	int lca(int a, int b) {
-		a=lift(a, depth[a]-min(depth[a], depth[b]));
-		b=lift(b, depth[b]-min(depth[a], depth[b]));
-		if (a==b) return a;
-		FOR(i, 18, -1, -1) if (up[a][i]!=up[b][i]) a=up[a][i], b=up[b][i];
-		return up[a][0];
-	}
-	int trav(int u) {
-		if (sw[u]) return u;
-		FOR(i, 18, -1, -1) if (up[u][i]!=-1 && !sw[up[u][i]]) u=up[u][i];
-		return up[u][0];
-	}
-	int query(int a, int b) {
-		int c=lca(a, b);
-		c=trav(c);
-		return c!=-1 ? w[c] : -1;
-	}
-};
+using H=pair<int, ll>;
 
-struct edge {
-	int u, v, w;
-};
+int n;
+vt<vt<H>> up;
 
-KRT krt;
-
-void init(int n, int m,
-          std::vector<int> U, std::vector<int> V, std::vector<int> W) {
-	krt.init(n, m);
-	vt<edge> e(m);
-	FOR(m) e[i]={U[i], V[i], W[i]};
-	sort(all(e), [](const edge& a, const edge& b) { return a.w<b.w; });
-	vt<int> deg(n, 0);
-	for (auto &[u, v, w] : e) krt.ae(u, v, w, (++deg[u]>=3 || ++deg[v]>=3));
-	krt.gen();
+ll lift(ll x, int k) {
+	int v=(x%n+n)%n;
+	FOR(30) if (k&(1<<i)) x-=up[v][i].s, v=up[v][i].f;
+	return x;
+}
+int depth(ll x) {
+	int v=x%n, d=0;
+	FOR(i, 29, -1, -1) if (x-up[v][i].s>0) d+=1<<i, x-=up[v][i].s, v=up[v][i].f;
+	return d;
+}
+ll lca(ll a, ll b) {
+	int da=depth(a), db=depth(b);
+	a=lift(a, da-min(da, db));
+	b=lift(b, db-min(da, db));
+	if (a==b) return a;
+	FOR(i, 29, -1, -1) if (lift(a, 1<<i)!=lift(b, 1<<i)) a=lift(a, 1<<i), b=lift(b, 1<<i);
+	return lift(a, 1); 
 }
 
-int getMinimumFuelCapacity(int x, int y) {
-	return krt.query(x, y);
+int main() {
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	int a, b, ka, kb, la, lb; read(a, b, ka, kb, la, lb);
+	n=a*b/gcd(a, b);
+	up.asn(n, vt<H>(30));
+	FOR(n) {
+		if (i%a==ka) up[i][0]={((i-la)%n+n)%n, la};
+		else if (i%b==kb) up[i][0]={((i-lb)%n+n)%n, lb};
+		else up[i][0]={((i-1)%n+n)%n, 1}; 
+	}
+	FOR(j, 1, 30) FOR(i, n) up[i][j]={up[up[i][j-1].f][j-1].f, up[i][j-1].s+up[up[i][j-1].f][j-1].s};
+	int m; read(m);
+	FOR(m) {
+		int x, y; read(x, y);
+		ll ans=lca(x, y);
+		print(ans>0 ? ans : -1);
+	}
 }

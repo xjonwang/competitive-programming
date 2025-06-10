@@ -1,5 +1,3 @@
-#include "swap.h"
-
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -16,8 +14,6 @@ template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree
 #define vt vector
 #define eb emplace_back
 #define pb push_back
-#define rsz resize
-#define asn assign
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -147,68 +143,125 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
+template<bool imin>
+struct ST {
+	int n, h;
+	vt<int> ms, v, d;
+	ST(int n, span<int> a) : n(n), h(32-__builtin_clz(n)), ms(2*n), v(2*n, default_value()), d(n, -1) {
+		FOR(n) ms[i+n]=a[i];
+		FOR(i, n-1, 0, -1) ms[i]=combine(ms[i<<1], ms[i<<1|1]);
+	}
+	void apply(int i, int x) {
+		v[i]=x ? ms[i] : default_value();
+		if (i<n) d[i]=x;
+	}
+	void push(int i) {
+		if (d[i]!=-1) {
+			apply(i<<1, d[i]);
+			apply(i<<1|1, d[i]);
+			d[i]=-1;
+		}
+	}
+	void propagate(int i) {
+		FOR(j, h, 0, -1) {
+			push(i>>j);
+		}	
+	}
+	void build(int i) {
+		for (; i>>=1; ) {
+			if (d[i]!=-1) v[i]=d[i] ? ms[i] : default_value();
+			else v[i]=combine(v[i<<1], v[i<<1|1]);
+		}
+	}
+	void set(int l, int r, int x) {
+		l+=n, r+=n;
+		int l0=l, r0=r-1;
+		propagate(l0), propagate(r0);
+		for (; l<r; l>>=1, r>>=1) {
+			if (l&1) apply(l++, x);
+			if (r&1) apply(--r, x);
+		}
+		build(l0), build(r0);
+	}
+	int query(int l, int r) {
+		l+=n, r+=n;
+		propagate(l), propagate(r-1);
+		int ret=default_value();
+		for (; l<r; l>>=1, r>>=1) {
+			if (l&1) ret=combine(ret, v[l++]);
+			if (r&1) ret=combine(ret, v[--r]);
+		}
+		return ret;
+	}
+	int combine(int l, int r) {
+		return imin ? min(l, r) : max(l, r);
+	}
+	int default_value() {
+		return imin ? INT_MAX : INT_MIN;
+	}
+};
+
+template<typename T>
+struct RMQ {
+	int level(int x) { return 31-__builtin_clz(x); }
+	vt<T> v; vt<vt<int>> jmp;
+	int cmb(int a, int b) {
+		return v[a]==v[b]?min(a,b):(v[a]<v[b]?a:b); }
+	void init(const vt<T>& _v) {
+		v = _v; jmp = {vt<int>(sz(v))};
+		iota(all(jmp[0]),0);
+		for (int j = 1; 1<<j <= sz(v); ++j) {
+			jmp.pb(vt<int>(sz(v)-(1<<j)+1));
+			FOR(i,sz(jmp[j])) jmp[j][i] = cmb(jmp[j-1][i],
+				jmp[j-1][i+(1<<(j-1))]);
+		}
+	}
+	int index(int l, int r) {
+		assert(l <= r); int d = level(r-l+1);
+		return cmb(jmp[d][l],jmp[d][r-(1<<d)+1]); }
+	T query(int l, int r) { return v[index(l,r)]; }
+};
+
 struct KRT {
-	int n, m, h;
-	vt<bool> sw;
-	vt<int> dsu, w, depth;
-	vt<vt<int>> adj, up;
-	void init(int a_n, int a_m) {
-		n=h=a_n;
-		m=a_m;
-		dsu.rsz(n+m), adj.rsz(n+m), up.asn(n+m, vt<int>(19, -1)), w.rsz(n+m), sw.asn(n+m, 0), depth.rsz(n+m);
+	int n, h;
+	vt<int> dsu, w, depth, pos;
+	vt<pii> tmp; RMQ<pii> rmq;
+	vt<vt<int>> adj;
+	KRT(int n) : n(n), h(n), dsu(2*n-1), adj(2*n-1), w(2*n-1, -1), depth(2*n-1), pos(2*n-1) {
 		iota(dsu.begin(), dsu.begin()+n, 0);
 	}
 	int get(int u) {
 		return u==dsu[u] ? u : dsu[u]=get(dsu[u]);
 	}
-	void ae(int u, int v, int i, bool deg3) {
+	void ae(int u, int v, int i) {
 		u=get(u), v=get(v);
-		if (u==v) {
-			dsu[h]=dsu[u]=h;
-			adj[h].pb(u);
-			up[u][0]=h;
-			w[h]=i;
-			sw[h]=1;
-			h++;
-		} else {
-			dsu[h]=dsu[u]=dsu[v]=h;
-			adj[h].pb(u), adj[h].pb(v);
-			up[u][0]=up[v][0]=h;
-			w[h]=i;
-			sw[h]=sw[u]||sw[v]||deg3;
-			h++;
-		}
+		if (u==v) return;
+		dsu[h]=h;
+		dsu[u]=dsu[v]=h;
+		adj[h].pb(u), adj[h].pb(v);
+		w[h]=i;
+		h++;
 	}
 	void dfs(int v) {
+		pos[v]=sz(tmp); tmp.eb(depth[v], v);
 		EACH(u, adj[v]) {
 			depth[u]=depth[v]+1;
 			dfs(u);
+			tmp.eb(depth[v], v);
 		}
 	}
 	void gen() {
-		FOR(j, 1, 19) FOR(i, n+m) if (up[i][j-1]!=-1) up[i][j]=up[up[i][j-1]][j-1];
-		depth[n+m-1]=0; dfs(n+m-1);
+		dfs(2*n-2);
+		rmq.init(tmp);
 	}
-	int lift(int x, int k) {
-		FOR(19) if (k&(1<<i)) x=up[x][i];
-		return x;
+	int pos_lca(int a, int b) {
+		if (b<a) return -1;
+		return rmq.query(a, b).s;
 	}
-	int lca(int a, int b) {
-		a=lift(a, depth[a]-min(depth[a], depth[b]));
-		b=lift(b, depth[b]-min(depth[a], depth[b]));
-		if (a==b) return a;
-		FOR(i, 18, -1, -1) if (up[a][i]!=up[b][i]) a=up[a][i], b=up[b][i];
-		return up[a][0];
-	}
-	int trav(int u) {
-		if (sw[u]) return u;
-		FOR(i, 18, -1, -1) if (up[u][i]!=-1 && !sw[up[u][i]]) u=up[u][i];
-		return up[u][0];
-	}
-	int query(int a, int b) {
-		int c=lca(a, b);
-		c=trav(c);
-		return c!=-1 ? w[c] : -1;
+	int danger(int u, ST<true>& minst, ST<false>& maxst) {
+		int l=minst.query(0, n), r=maxst.query(0, n);
+		l=pos_lca(l, pos[u]), r=pos_lca(pos[u], r);
+		return max(l!=-1 ? w[l] : -1, r!=-1 ? w[r] : -1);
 	}
 };
 
@@ -216,19 +269,56 @@ struct edge {
 	int u, v, w;
 };
 
-KRT krt;
-
-void init(int n, int m,
-          std::vector<int> U, std::vector<int> V, std::vector<int> W) {
-	krt.init(n, m);
-	vt<edge> e(m);
-	FOR(m) e[i]={U[i], V[i], W[i]};
+int main() {
+	ios::sync_with_stdio(0);
+	cin.tie(0);
+	int n, m; read(n, m);
+	vt<edge> e(n-1);
+	FOR(n-1) {
+		int x, y, z; read(x, y, z);
+		e[i]={--x, --y, z};
+	}
 	sort(all(e), [](const edge& a, const edge& b) { return a.w<b.w; });
-	vt<int> deg(n, 0);
-	for (auto &[u, v, w] : e) krt.ae(u, v, w, (++deg[u]>=3 || ++deg[v]>=3));
+	KRT krt(n);
+	for (auto &[u, v, w] : e) krt.ae(u, v, w);
 	krt.gen();
+	ST<true> minst(n, span(krt.pos).subspan(0, n));
+	ST<false> maxst(n, span(krt.pos).subspan(0, n));
+	FOR(m) {
+		int x, y; read(x);
+		switch (x) {
+			case 1:
+				read(x, y); --x;
+				minst.set(x, y, 1);
+				maxst.set(x, y, 1);
+				break;
+			case 2:
+				read(x, y); --x;
+				minst.set(x, y, 0);
+				maxst.set(x, y, 0);
+				break;
+			case 3:
+				read(x);
+				print(krt.danger(--x, minst, maxst));
+				break;
+		}
+	}
 }
 
-int getMinimumFuelCapacity(int x, int y) {
-	return krt.query(x, y);
-}
+/*
+6 9
+1 3 1
+2 3 2
+4 5 3
+4 6 4
+3 4 5
+3 1
+1 1 1
+3 1
+2 1 1
+1 5 6
+3 4
+2 6 6
+3 4
+3 1
+*/
