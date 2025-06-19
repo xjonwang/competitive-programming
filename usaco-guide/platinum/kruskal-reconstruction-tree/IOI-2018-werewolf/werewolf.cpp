@@ -1,3 +1,5 @@
+#include "werewolf.h"
+
 #include <bits/stdc++.h>
 using namespace std;
 
@@ -12,6 +14,7 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
@@ -142,83 +145,125 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct node {
-	int dir, idx, w;
-};
-struct node_cmp {
-	bool operator()(const node& a, const node& b) const {
-		return a.w>b.w;
+struct KRT {
+	int n, h, timer;
+	vt<int> dsu, idx, tin, tout, depth;
+	vt<vt<int>> adj, up;
+	vt<bool> vis;
+	KRT(int n) : n(n), h(n), timer(0), dsu(2*n-1), adj(2*n-1), up(2*n-1, vt<int>(19, -1)), idx(2*n-1, INT_MAX), tin(2*n-1), tout(2*n-1), depth(2*n-1), vis(2*n-1, 0) {
+		iota(dsu.begin(), dsu.begin()+n, 0);
 	}
-};
-
-struct point {
-	int r, c, w;
-};
-struct point_cmp {
-	bool operator()(const point& a, const point& b) const {
-		return a.w!=b.w ? a.w<b.w : (a.r!=b.r ? a.r<b.r : a.c<b.c);
+	int get(int u) {
+		return u==dsu[u] ? u : dsu[u]=get(dsu[u]);
 	}
-};
-
-int solve() {
-	int n; read(n);
-	vt<vt<int>> a(n, vt<int>(n)), b(n, vt<int>(n)); read(a, b);
-	vt<int> t1(n), t2(n); read(t1, t2);
-	vt<vt<bool>> vis(2, vt<bool>(n, 0));
-	vt<vt<int>> cost(2, vt<int>(n, 0));
-	vt<vt<set<point, point_cmp>>> pts(2, vt<set<point, point_cmp>>(n));
-	priority_queue<node, vt<node>, node_cmp> pq;
-	FOR(n) {
-		FOR(j, n) {
-			if (a[i][j]==-1) {
-				pts[0][j].insert({i, j, b[i][j]});
-				pts[1][i].insert({i, j, b[i][j]});
+	void ae(int u, int v, int i) {
+		u=get(u), v=get(v);
+		if (u==v) return;
+		dsu[h]=h;
+		dsu[u]=dsu[v]=h;
+		adj[h].pb(u), adj[h].pb(v);
+		up[u][0]=up[v][0]=h;
+		idx[h]=i;
+		h++;
+	}
+	void dfs(int v) {
+		vis[v]=1;
+		tin[v]=timer++;
+		EACH(u, adj[v]) {
+			depth[u]=depth[v]+1;
+			dfs(u);
+		}
+	}
+	void gen() {
+		FOR(j, 1, 19) FOR(i, 2*n-1) if (up[i][j-1]!=-1) up[i][j]=up[up[i][j-1]][j-1];
+		FOR(i, 2*n-2, -1, -1) {
+			if (!vis[i]) {
+				depth[i]=0;
+				dfs(i);
 			}
 		}
 	}
-	FOR(dir, 2) {
-		FOR(idx, n) {
-			for (auto it=pts[dir][idx].begin(); it!=pts[dir][idx].end() && it!=prev(pts[dir][idx].end()); it++) {
-				cost[dir][idx]+=it->w;
-			}
-		}
+	int lift(int u, int k) {
+		FOR(19) if (k&(1<<i)) u=up[u][i];
+		return u;
 	}
-	FOR(dir, 2) FOR(idx, n) pq.push({dir, idx, cost[dir][idx]});
-	auto upd=[&](int dir, int idx, point p) {
-		auto it=pts[dir][idx].find(p);
-		if (it==pts[dir][idx].end()) {
-			return;
-		} else if (next(it)==pts[dir][idx].end()) {
-			if (it!=pts[dir][idx].begin()) cost[dir][idx]-=prev(it)->w;
-		} else {
-			cost[dir][idx]-=it->w;
-		}
-		pts[dir][idx].erase(it);
-		pq.push({dir, idx, cost[dir][idx]});
-	};
-	int ans=0;
-	while (sz(pq)) {
-		auto [dir, idx, w]=pq.top(); pq.pop();
-		if (vis[dir][idx]) continue;
-		vis[dir][idx]=1;
-		ans+=w;
-		switch (dir) {
-			case 0:
-				for (auto &[r, c, w] : pts[0][idx]) upd(1, r, {r, c, w});
-				break;
-			case 1:
-				for (auto &[r, c, w] : pts[1][idx]) upd(0, c, {r, c, w});
-				break;
-		}
+	int lca(int a, int b) {
+		a=lift(a, depth[a]-min(depth[a], depth[b]));
+		b=lift(b, depth[b]-min(depth[a], depth[b]));
+		if (a==b) return a;
+		FOR(i, 18, -1, -1) if (up[a][i]!=up[b][i]) a=up[a][i], b=up[b][i];
+		return up[a][0];
+	}
+	int query(int a, int b) {
+		int c=lca(a, b);
+		return c!=-1 ? idx[c] : -1;
+	}
+};
+
+struct DSU {
+	vt<int> e;
+	vt<set<pii>> tin;
+	DSU(int n, span<int> a) : e(n, -1), tin(n) {
+		FOR(n) tin[i].insert({a[i], i});
+	}
+	int get(int x) { return e[x]<0 ? x : e[x]=get(e[x]); }
+	int size(int x) { return e[x]<0 ? -e[x] : size(e[x]); }
+	bool unite(int x, int y) {
+		x=get(x), y=get(y);
+		if (x==y) return false;
+		if (e[x]>e[y]) swap(x, y);
+		e[x]+=e[y];
+		e[y]=x;
+		if (sz(tin[y])>sz(tin[x])) swap(tin[x], tin[y]);
+		tin[x].insert(all(tin[y]));
+		tin[y].clear();
+		return true;
+	}
+};
+
+struct query {
+	int st, en, l, r, i;
+};
+
+vt<int> check_validity(int n, vt<int> x, vt<int> y,
+					   vt<int> S, vt<int> E,
+					   vt<int> L, vt<int> R) {
+	int m=sz(x);
+	vt<pii> e(m);
+	FOR(m) e[i]={x[i], y[i]};
+	sort(all(e), [](const pii& a, const pii& b) { return a.f>b.f; });
+	KRT krt(n);
+	for (auto &[l, r] : e) {
+		if (l>r) swap(l, r);
+		krt.ae(l, r, l);
+	}
+	krt.gen();
+	int k=sz(S);
+	vt<query> q(k);
+	FOR(k) q[i]={S[i], E[i], L[i], R[i], i};
+	sort(all(e), [](const pii& a, const pii& b) { return a.s<b.s; });
+	sort(all(q), [](const query& a, const query& b) { return a.r<b.r; });
+	int p=0;
+	vt<int> ans(k);
+	DSU dsu(n, span(krt.tin).subspan(0, n));
+	for (auto &[st, en, bl, br, i] : q) {
+		for (; p<m && e[p].s<=br; p++) dsu.unite(e[p].f, e[p].s);
+		set<pii>& tins=dsu.tin[dsu.get(en)];
+		auto it=tins.lower_bound(make_pair(krt.tin[st], st));
+		int a=-1;
+		if (it!=tins.end()) umax(a, krt.query(it->s, st));
+		if (it!=tins.begin()) umax(a, krt.query(prev(it)->s, st));
+		ans[i]=(a>=bl);
 	}
 	return ans;
 }
 
-int main() {
-	ios::sync_with_stdio(0);
-	cin.tie(0);
-	freopen("test_set_1/ts1_input.txt", "r", stdin);
-	freopen("out.out", "w", stdout);
-	int t; read(t);
-	FOR(t) cout << "Case #" << i+1 << ": " << solve() << endl; 
-}
+/*
+6 5 1
+5 3
+3 0
+0 2
+2 4
+4 1
+5 1 2 4
+*/

@@ -12,7 +12,11 @@ using namespace __gnu_pbds;
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
 
 #define vt vector
+#define eb emplace_back
 #define pb push_back
+#define rsz resize
+#define fr front()
+#define bk back()
 #define all(c) (c).begin(), (c).end()
 #define sz(x) (int)(x).size()
 #define pll pair<ll, ll>
@@ -111,15 +115,15 @@ template<size_t S> string to_string(bitset<S> b) {
 	return res;
 }
 template<class T> string to_string(T v) {
-    bool f=1;
-    string res;
-    EACH(x, v) {
+	bool f=1;
+	string res;
+	EACH(x, v) {
 		if(!f)
 			res+=' ';
 		f=0;
 		res+=to_string(x);
 	}
-    return res;
+	return res;
 }
 template<class A, class B> string to_string(pair<A, B>& x) {
 	return to_string(x.first) + ' ' + to_string(x.second);
@@ -142,83 +146,31 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct node {
-	int dir, idx, w;
-};
-struct node_cmp {
-	bool operator()(const node& a, const node& b) const {
-		return a.w>b.w;
-	}
-};
-
-struct point {
-	int r, c, w;
-};
-struct point_cmp {
-	bool operator()(const point& a, const point& b) const {
-		return a.w!=b.w ? a.w<b.w : (a.r!=b.r ? a.r<b.r : a.c<b.c);
-	}
-};
-
-int solve() {
-	int n; read(n);
-	vt<vt<int>> a(n, vt<int>(n)), b(n, vt<int>(n)); read(a, b);
-	vt<int> t1(n), t2(n); read(t1, t2);
-	vt<vt<bool>> vis(2, vt<bool>(n, 0));
-	vt<vt<int>> cost(2, vt<int>(n, 0));
-	vt<vt<set<point, point_cmp>>> pts(2, vt<set<point, point_cmp>>(n));
-	priority_queue<node, vt<node>, node_cmp> pq;
-	FOR(n) {
-		FOR(j, n) {
-			if (a[i][j]==-1) {
-				pts[0][j].insert({i, j, b[i][j]});
-				pts[1][i].insert({i, j, b[i][j]});
-			}
-		}
-	}
-	FOR(dir, 2) {
-		FOR(idx, n) {
-			for (auto it=pts[dir][idx].begin(); it!=pts[dir][idx].end() && it!=prev(pts[dir][idx].end()); it++) {
-				cost[dir][idx]+=it->w;
-			}
-		}
-	}
-	FOR(dir, 2) FOR(idx, n) pq.push({dir, idx, cost[dir][idx]});
-	auto upd=[&](int dir, int idx, point p) {
-		auto it=pts[dir][idx].find(p);
-		if (it==pts[dir][idx].end()) {
-			return;
-		} else if (next(it)==pts[dir][idx].end()) {
-			if (it!=pts[dir][idx].begin()) cost[dir][idx]-=prev(it)->w;
-		} else {
-			cost[dir][idx]-=it->w;
-		}
-		pts[dir][idx].erase(it);
-		pq.push({dir, idx, cost[dir][idx]});
-	};
-	int ans=0;
-	while (sz(pq)) {
-		auto [dir, idx, w]=pq.top(); pq.pop();
-		if (vis[dir][idx]) continue;
-		vis[dir][idx]=1;
-		ans+=w;
-		switch (dir) {
-			case 0:
-				for (auto &[r, c, w] : pts[0][idx]) upd(1, r, {r, c, w});
-				break;
-			case 1:
-				for (auto &[r, c, w] : pts[1][idx]) upd(0, c, {r, c, w});
-				break;
-		}
-	}
-	return ans;
-}
+#define MX 61
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	freopen("test_set_1/ts1_input.txt", "r", stdin);
-	freopen("out.out", "w", stdout);
-	int t; read(t);
-	FOR(t) cout << "Case #" << i+1 << ": " << solve() << endl; 
+	int n; read(n);
+	vt<int> v(n); read(v);
+	vt<vt<int>> adj(MX);
+	vt<vt<bool>> mex(MX, vt<bool>(MX, 0));
+	vt<int> nim(MX);
+	vt<unordered_set<pair<ll, int>>> pa(MX); pa[0].insert(0);
+	FOR(MX) {
+		int m=0;
+		for (; mex[i][m]; m++);
+		nim[i]=m;
+		for (auto &[x, ni] : pa[i]) {
+			FOR(j, 1, MX) {
+				if (i+j<MX && (x&(1ll<<j))==0) {
+					mex[i+j][ni]=1;
+					pa[i+j].insert(x^(1ll<<j));
+				}
+			}
+		}
+	}
+	int x=0;
+	EACH(i, v) x^=nim[i];
+	print(x ? "NO" : "YES");
 }

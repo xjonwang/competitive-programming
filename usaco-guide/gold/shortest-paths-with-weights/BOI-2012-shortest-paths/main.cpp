@@ -145,71 +145,151 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-vt<vt<pii>> adj, tadj;
-vt<pii> par;
-vt<ll> dist, depth;
-vt<bool> vis;
-
-void dfs1(int v) {
-	for (auto &[u, w] : tadj[v]) {
-		depth[u]=depth[v]+w;
-		dfs1(u);
+template<typename T>
+struct RMQ {
+	int level(int x) { return 31-__builtin_clz(x); }
+	vt<T> v; vt<vt<int>> jmp;
+	int cmb(int a, int b) {
+		return v[a]==v[b]?min(a,b):(v[a]<v[b]?a:b); }
+	void init(const vt<T>& _v) {
+		v = _v; jmp = {vt<int>(sz(v))};
+		iota(all(jmp[0]),0);
+		for (int j = 1; 1<<j <= sz(v); ++j) {
+			jmp.pb(vt<int>(sz(v)-(1<<j)+1));
+			FOR(i,sz(jmp[j])) jmp[j][i] = cmb(jmp[j-1][i],
+				jmp[j-1][i+(1<<(j-1))]);
+		}
 	}
-}
+	int index(int l, int r) {
+		assert(l <= r); int d = level(r-l+1);
+		return cmb(jmp[d][l],jmp[d][r-(1<<d)+1]); }
+	T query(int l, int r) { return v[index(l,r)]; }
+};
 
-void dfs2(int v) {
-	for (auto &[u, w] : adj[v]) {
+struct LCA {
+	int N; vt<vt<int>> adj;
+	vt<int> depth, pos, par, rev;
+	vt<pii> tmp; RMQ<pii> r;
+	void init(int _N) { N = _N; adj.resize(N); 
+		depth = pos = par = rev = vt<int>(N); }
+	void ae(int x, int y) { adj[x].pb(y), adj[y].pb(x); }
+	void dfs(int x) {
+		pos[x] = sz(tmp); tmp.eb(depth[x],x); 
+		EACH(y,adj[x]) if (y != par[x]) {
+			depth[y] = depth[par[y]=x]+1, dfs(y);
+			tmp.eb(depth[x],x); }
+	}
+	void gen(int R = 0) { par[R] = R; dfs(R); r.init(tmp); }
+	int lca(int u, int v){
+		u = pos[u], v = pos[v]; if (u > v) swap(u,v);
+		return r.query(u,v).s; }
+	int dist(int u, int v) {
+		return depth[u]+depth[v]-2*depth[lca(u,v)]; }
+	vt<pii> compress(vt<int> S) {
+		auto cmp = [&](int a, int b) { return pos[a] < pos[b]; };
+		sort(all(S),cmp); FOR(i,sz(S)-1,-1,-1) S.pb(lca(S[i],S[i+1]));
+		sort(all(S),cmp); S.erase(unique(all(S)),end(S));
+		vt<pii> ret{{0,S[0]}}; FOR(i,sz(S)) rev[S[i]] = i;
+		FOR(i,1,sz(S)) ret.eb(rev[lca(S[i-1],S[i])],S[i]);
+		return ret;
+	}
+};
 
+struct ST {
+	int n;
+	vt<ll> v;
+	ST(int n) : n(n), v(2*n, 1e18) {}
+	void minify(int l, int r, ll x) {
+		for (l+=n, r+=n; l<r; l>>=1, r>>=1) {
+			if (l&1) umin(v[l++], x);
+			if (r&1) umin(v[--r], x);
+		}
 	}
-	for (auto &[u, w] : tadj[v]) {
-		if (vis[u]) continue;
-		dfs2(u);
+	ll query(int i) {
+		ll ret=1e18;
+		for (i+=n; i; i>>=1) {
+			umin(ret, v[i]);
+		}
+		return ret;
 	}
-}
+};
+
+struct edge {
+	int u, v, w;
+};
+
+vt<edge> ed;
+vt<vt<pii>> adj;
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, start, end; read(n, m, start, end);
-	--start, --end;
-	adj.rsz(n), tadj.rsz(n), par.rsz(n), dist.asn(n, 1e18), depth.rsz(n), vis.asn(n, 0);
-	int x, y, z;
+	int n, m, st, en; read(n, m, st, en); --st, --en;
+	ed.rsz(m), adj.rsz(n);
 	FOR(m) {
-		read(x, y, z); --x, --y;
-		adj[x].eb(y, z), adj[y].eb(x, z);
-	}	
-	int k; read(k);
-	vt<int> sp(k), spd(k-1); read(sp);
-	FOR(k-1) {
-		for (auto &[u, w] : adj[sp[i]]) {
-			if (u==sp[i+1]) {
-				spd[i]=w;
-				break;
-			}
-		}
+		int x, y, z; read(x, y, z);
+		ed[i]={--x, --y, z};
+		adj[x].pb({y, z}), adj[y].pb({x, z});
 	}
+	vt<ll> dst(n, 1e18), den(n, 1e18);
+	vt<int> par(n, -1);
 	priority_queue<pair<ll, int>, vt<pair<ll, int>>, greater<pair<ll, int>>> pq;
-	dist[start]=0; pq.push({start, 0});
-	FOR(k-1) {
-		dist[sp[i+1]]=dist[sp[i]]+spd[i];
-		pq.push({sp[i+1], dist[sp[i+1]]});
-	}
+	dst[st]=0, pq.push({0, st});
 	while (sz(pq)) {
-		auto [d, v]=pq.top(); pq.pop();
-		if (d>dist[v]) continue;
+		auto [c, v]=pq.top(); pq.pop();
+		if (c>dst[v]) continue;
 		for (auto &[u, w] : adj[v]) {
-			if (umin(dist[u], d+w)) {
-				par[u]={v, w};
-				pq.push({d+w, u});
+			if (umin(dst[u], c+w)) {
+				par[u]=v;
+				pq.push({c+w, u});
 			}
 		}
 	}
-	FOR(n) {
-		if (i==start) continue;
-		auto &[p, pw]=par[i];
-		tadj[p].eb(i, pw);
+	int k; read(k);
+	vt<int> pa(k); read(pa);
+	EACH(x, pa) --x;
+	FOR(i, 1, k) par[pa[i]]=pa[i-1];
+	LCA lca; lca.init(n);
+	FOR(n) if (par[i]!=-1) lca.ae(par[i], i);
+	lca.gen(st);
+	den[en]=0, pq.push({0, en});
+	while (sz(pq)) {
+		auto [c, v]=pq.top(); pq.pop();
+		if (c>den[v]) continue;
+		for (auto &[u, w] : adj[v]) if (umin(den[u], c+w)) pq.push({c+w, u});
 	}
-	depth[start]=0;
-	dfs1(start);
-
+	vt<int> rpa(n);
+	FOR(k) rpa[pa[i]]=i;
+	ST ans(k);
+	for (auto [u, v, w] : ed) {
+		if (par[u]==v || par[v]==u || dst[u]==1e18 || dst[v]==1e18) continue;
+		int l=rpa[lca.lca(u, en)], r=rpa[lca.lca(v, en)];
+		if (l>r) swap(l, r), swap(u, v);
+		ans.minify(l, r, dst[u]+den[v]+w);
+	}
+	FOR(k-1) {
+		ll a=ans.query(i);
+		print(a!=1e18 ? a : -1);
+	}
 }
+
+/*
+6 3 4 1
+1 2 1
+2 3 1
+3 4 1
+4 4 3 2 1
+
+7 10 1 4
+1 2 1
+2 3 1
+3 4 1
+1 5 2
+5 6 100
+6 3 2
+5 4 200
+5 7 150
+7 4 20
+1 6 50
+4 1 2 3 4
+*/
