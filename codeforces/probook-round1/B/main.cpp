@@ -6,7 +6,7 @@ using namespace std;
 #define ar array
 
 #include <ext/pb_ds/assoc_container.hpp>
-#include <ext/pb_ds/tree_policy.hpp> 
+#include <ext/pb_ds/tree_policy.hpp>
 using namespace __gnu_pbds;
 
 template <typename T> using oset = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
@@ -36,32 +36,7 @@ template<class T> bool umin(T& a, const T& b) {
 template<class T> bool umax(T& a, const T& b) { 
 	return a<b?a=b, 1:0;
 } 
-tcT, int SZ> struct LazySeg { 
-	static_assert(pct(SZ) == 1); // SZ must be power of 2
-	const T ID{}; T cmb(T a, T b) { return a+b; }
-	T seg[2*SZ], lazy[2*SZ]; 
-	LazySeg() { F0R(i,2*SZ) seg[i] = lazy[i] = ID; }
-	void push(int ind, int L, int R) { /// modify values for current node
-		seg[ind] += (R-L+1)*lazy[ind]; // dependent on operation
-		if (L != R) F0R(i,2) lazy[2*ind+i] += lazy[ind]; /// prop to children
-		lazy[ind] = 0; 
-	} // recalc values for current node
-	void pull(int ind){seg[ind]=cmb(seg[2*ind],seg[2*ind+1]);}
-	void build() { ROF(i,1,SZ) pull(i); }
-	void upd(int lo,int hi,T inc,int ind=1,int L=0, int R=SZ-1) {
-		push(ind,L,R); if (hi < L || R < lo) return;
-		if (lo <= L && R <= hi) { 
-			lazy[ind] = inc; push(ind,L,R); return; }
-		int M = (L+R)/2; upd(lo,hi,inc,2*ind,L,M); 
-		upd(lo,hi,inc,2*ind+1,M+1,R); pull(ind);
-	}
-	T query(int lo, int hi, int ind=1, int L=0, int R=SZ-1) {
-		push(ind,L,R); if (lo > R || L > hi) return ID;
-		if (lo <= L && R <= hi) return seg[ind];
-		int M = (L+R)/2; return cmb(query(lo,hi,2*ind,L,M),
-			query(lo,hi,2*ind+1,M+1,R));
-	}
-};
+
 ll FIRSTTRUE(function<bool(ll)> f, ll lb, ll rb) {
 	while(lb<rb) {
 		ll mb=(lb+rb)/2;
@@ -146,9 +121,6 @@ template<class T> string to_string(T v) {
 	}
     return res;
 }
-template<class A, class B> string to_string(pair<A, B>& x) {
-	return to_string(x.first) + ' ' + to_string(x.second);
-}
 
 template<class A> void write(A x) {
 	cout << to_string(x);
@@ -167,55 +139,24 @@ template<class H, class... T> void print(const H& h, const T&... t) {
 	print(t...);
 }
 
-struct ST {
-	int n; vt<int> seg, sum;
-	ST(vt<int>& a) : n(1) {
-		while (n<sz(a)) n*=2;
-		seg.resize(2*n), sum.resize(2*n);
-		FOR(sz(a)) seg[n+i]=sum[n+i]=a[i];
-		FOR(i, n-1, 0, -1) merge(i);
-	}
-	void merge(int i) {
-		seg[i]=max(seg[i<<1|1], sum[i<<1|1]+seg[i<<1]);
-		sum[i]=sum[i<<1]+sum[i<<1|1];
-	}
-	void modify(int i, int x) {
-		i+=n; seg[i]+=x, sum[i]+=x;
-		for (; i>1; i>>=1) merge(i>>1);
-	}
-	int query() {
-		if (seg[1]<=0) return -1;
-		int i=1, x=0;
-		while (i<n) {
-			if (seg[i<<1|1]>x) i<<=1, i|=1;
-			else x-=sum[i<<1|1], i<<=1;
+void solve() {
+	int n, k; read(n, k);
+	vt<int> v(n); read(v);
+	sort(all(v), greater<int>());
+	int sum=0;
+	FOR(n) {
+		if (sum+v[i]>k) {
+			print(k-sum);
+			return;
 		}
-		return i-n;
+		sum+=v[i];
 	}
-};
+	print(k-sum);
+}
 
 int main() {
 	ios::sync_with_stdio(0);
 	cin.tie(0);
-	int n, m, q, x, y, z; read(n, m);
-	vt<int> a(n), b(m), cnt(1e6+1, 0);
-	read(a, b);
-	FOR(n) cnt[a[i]]++;
-	FOR(m) cnt[b[i]]--;
-	ST st(cnt);
-	read(q);
-	FOR(q) {
-		read(x, y, z); --y;
-		switch (x) {
-			case 1:
-				st.modify(a[y], -1);
-				st.modify(a[y]=z, 1);	
-				break;
-			case 2:
-				st.modify(b[y], 1);
-				st.modify(b[y]=z, -1);
-				break;
-		}
-		print(st.query());
-	}
+	int t; read(t);
+	FOR(t) solve();
 }
